@@ -1,371 +1,478 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Speed Limit AI Test</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Speed Limit AI</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #111;
-      color: white;
-      margin: 0;
-      padding: 20px;
-    }
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#111;
+    color:white;
+    text-align:center;
+    padding:20px;
+}
 
-    h1 {
-      margin-bottom: 10px;
-    }
+.box{
+    max-width:500px;
+    margin:auto;
+    background:#1d1d1d;
+    padding:20px;
+    border-radius:18px;
+}
 
-    #preview {
-      width: min(95vw, 640px);
-      max-height: 70vh;
-      object-fit: contain;
-      border: 2px solid #555;
-      border-radius: 12px;
-      margin-top: 15px;
-    }
+input,button{
+    width:100%;
+    padding:13px;
+    margin:8px 0;
+    border-radius:10px;
+    border:none;
+    box-sizing:border-box;
+}
 
-    button {
-      margin: 10px 5px;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+button{
+    background:#2196f3;
+    color:white;
+    font-size:16px;
+    font-weight:bold;
+}
 
-    #result {
-      margin-top: 15px;
-      font-size: 20px;
-      font-weight: bold;
-    }
+img{
+    max-width:100%;
+    margin-top:15px;
+    border-radius:12px;
+}
 
-    #status {
-      margin: 10px;
-      color: #aaa;
-    }
-  </style>
+#result{
+    margin-top:20px;
+    padding:15px;
+    border-radius:12px;
+    background:#292929;
+}
+
+.warning{
+    background:#8b0000 !important;
+}
+
+.safe{
+    background:#075c20 !important;
+}
+</style>
 </head>
 
 <body>
 
-  <h1>🚗 Speed Limit AI Test</h1>
+<div class="box">
 
-  <div id="status">Loading model...</div>
+<h1>🚗 Speed Limit AI -2</h1>
 
-  <input type="file" id="imageInput" accept="image/*">
+<p id="modelStatus">⏳ Loading AI model...</p>
 
-  <br>
+<label>🚗 Car Speed (km/h)</label>
 
-  <img id="preview" hidden>
+<input
+    type="number"
+    id="carSpeed"
+    value="20"
+    min="0"
+    max="300"
+>
 
-  <div id="result">Upload an image</div>
+<label>🖼️ Upload Speed Limit Sign</label>
+
+<input
+    type="file"
+    id="imageInput"
+    accept="image/*"
+>
+
+<img id="preview" style="display:none;">
+
+<button onclick="detectSign()">
+    🤖 Detect Speed Limit
+</button>
+
+<div id="result">
+    Waiting for image...
+</div>
+
+</div>
 
 <script>
 
-let session = null;
+let session;
 
+// IMPORTANT:
+// Keep speed_limit_best.onnx in the same folder as this HTML.
 const MODEL_PATH = "./speed_limit_best.onnx";
 
+/*
+Your 9 classes
+*/
 const CLASS_NAMES = [
-  "STOP",
-  "SPEED LIMIT 100",
-  "SPEED LIMIT 120",
-  "SPEED LIMIT 20",
-  "SPEED LIMIT 30",
-  "SPEED LIMIT 50",
-  "SPEED LIMIT 70",
-  "SPEED-LIMIT-60",
-  "SPEED-LIMIT-80"
+    "STOP",
+    "SPEED LIMIT 100",
+    "SPEED LIMIT 120",
+    "SPEED LIMIT 20",
+    "SPEED LIMIT 30",
+    "SPEED LIMIT 50",
+    "SPEED-LIMIT-60",
+    "SPEED LIMIT 70",
+    "SPEED LIMIT 80"
 ];
 
-const INPUT_SIZE = 640;
 
-async function loadModel() {
+/* ---------------- MODEL LOAD ---------------- */
 
-  try {
+async function loadModel(){
 
-    session = await ort.InferenceSession.create(
-      MODEL_PATH,
-      {
-        executionProviders: ["wasm"]
-      }
+    try{
+
+        session = await ort.InferenceSession.create(
+            MODEL_PATH,
+            {
+                executionProviders:["wasm"]
+            }
+        );
+
+        document.getElementById("modelStatus").innerHTML =
+            "✅ Speed-limit AI loaded";
+
+    }catch(error){
+
+        document.getElementById("modelStatus").innerHTML =
+            "❌ Model loading failed";
+
+        console.error(error);
+    }
+}
+
+loadModel();
+
+
+/* ---------------- IMAGE PREVIEW ---------------- */
+
+document.getElementById("imageInput").addEventListener(
+    "change",
+    function(){
+
+        const file = this.files[0];
+
+        if(!file) return;
+
+        const img = document.getElementById("preview");
+
+        img.src = URL.createObjectURL(file);
+        img.style.display = "block";
+    }
+);
+
+
+/* ---------------- IMAGE → TENSOR ---------------- */
+
+function imageToTensor(img){
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = 640;
+    canvas.height = 640;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.drawImage(img,0,0,640,640);
+
+    const imageData = ctx.getImageData(
+        0,
+        0,
+        640,
+        640
     );
 
-    console.log("Model loaded");
+    const data = new Float32Array(
+        1 * 3 * 640 * 640
+    );
 
-    console.log("Input:", session.inputNames);
-    console.log("Output:", session.outputNames);
+    for(let i=0;i<640*640;i++){
 
-    document.getElementById("status").innerText =
-      "✅ Speed-limit model loaded";
+        data[i] =
+            imageData.data[i*4] / 255.0;
 
-  } catch (error) {
+        data[640*640+i] =
+            imageData.data[i*4+1] / 255.0;
 
-    console.error(error);
-
-    document.getElementById("status").innerText =
-      "❌ Model loading failed";
-
-  }
-
-}
-
-function imageToTensor(img) {
-
-  const canvas = document.createElement("canvas");
-
-  canvas.width = INPUT_SIZE;
-  canvas.height = INPUT_SIZE;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.drawImage(
-    img,
-    0,
-    0,
-    INPUT_SIZE,
-    INPUT_SIZE
-  );
-
-  const imageData = ctx.getImageData(
-    0,
-    0,
-    INPUT_SIZE,
-    INPUT_SIZE
-  );
-
-  const data = new Float32Array(
-    3 * INPUT_SIZE * INPUT_SIZE
-  );
-
-  const area = INPUT_SIZE * INPUT_SIZE;
-
-  for (let i = 0; i < area; i++) {
-
-    const r = imageData.data[i * 4] / 255;
-    const g = imageData.data[i * 4 + 1] / 255;
-    const b = imageData.data[i * 4 + 2] / 255;
-
-    data[i] = r;
-    data[area + i] = g;
-    data[area * 2 + i] = b;
-
-  }
-
-  return new ort.Tensor(
-    "float32",
-    data,
-    [1, 3, INPUT_SIZE, INPUT_SIZE]
-  );
-
-}
-
-async function detect(img) {
-
-  if (!session) {
-
-    document.getElementById("result").innerText =
-      "❌ Model not loaded";
-
-    return;
-
-  }
-
-  document.getElementById("result").innerText =
-    "🔎 Detecting...";
-
-  try {
-
-    const tensor = imageToTensor(img);
-
-    const inputName = session.inputNames[0];
-
-    const output = await session.run({
-      [inputName]: tensor
-    });
-
-    const outputName = session.outputNames[0];
-
-    const result = output[outputName];
-
-    console.log("Output shape:", result.dims);
-
-    const detections = decodeOutput(result);
-
-    showResults(detections);
-
-  } catch (error) {
-
-    console.error(error);
-
-    document.getElementById("result").innerText =
-      "❌ Detection error";
-
-  }
-
-}
-
-function decodeOutput(output) {
-
-  const data = output.data;
-  const dims = output.dims;
-
-  console.log("Raw output:", dims);
-
-  /*
-    YOLOv11 normally gives:
-
-    [1, 4 + classes, 8400]
-
-    For 9 classes:
-
-    [1, 13, 8400]
-  */
-
-  let channels;
-  let boxes;
-
-  if (dims.length !== 3) {
-    console.error("Unexpected output shape");
-    return [];
-  }
-
-  if (dims[1] < dims[2]) {
-
-    channels = dims[1];
-    boxes = dims[2];
-
-  } else {
-
-    boxes = dims[1];
-    channels = dims[2];
-
-  }
-
-  const classCount = channels - 4;
-
-  console.log(
-    "Channels:",
-    channels,
-    "Boxes:",
-    boxes,
-    "Classes:",
-    classCount
-  );
-
-  const detections = [];
-
-  for (let i = 0; i < boxes; i++) {
-
-    let bestClass = -1;
-    let bestScore = 0;
-
-    for (let c = 0; c < classCount; c++) {
-
-      let index;
-
-      if (dims[1] === channels) {
-
-        index = (4 + c) * boxes + i;
-
-      } else {
-
-        index = i * channels + 4 + c;
-
-      }
-
-      const score = data[index];
-
-      if (score > bestScore) {
-
-        bestScore = score;
-        bestClass = c;
-
-      }
-
+        data[2*640*640+i] =
+            imageData.data[i*4+2] / 255.0;
     }
 
-    if (bestScore >= 0.35) {
-
-      detections.push({
-        classId: bestClass,
-        confidence: bestScore
-      });
-
-    }
-
-  }
-
-  return detections;
-
+    return new ort.Tensor(
+        "float32",
+        data,
+        [1,3,640,640]
+    );
 }
 
-function showResults(detections) {
 
-  const result = document.getElementById("result");
+/* ---------------- SPEED EXTRACTION ---------------- */
 
-  if (detections.length === 0) {
+function getSpeed(className){
+
+    const match = className.match(/\d+/);
+
+    if(!match) return null;
+
+    return Number(match[0]);
+}
+
+
+/* ---------------- DETECTION ---------------- */
+
+async function detectSign(){
+
+    const file =
+        document.getElementById("imageInput").files[0];
+
+    const carSpeed =
+        Number(document.getElementById("carSpeed").value);
+
+    const result =
+        document.getElementById("result");
+
+    if(!session){
+
+        result.innerHTML =
+            "❌ AI model is not loaded yet.";
+
+        return;
+    }
+
+    if(!file){
+
+        result.innerHTML =
+            "⚠️ Pehle speed-limit sign ki image upload karo.";
+
+        return;
+    }
+
+
+    result.className = "";
 
     result.innerHTML =
-      "❌ No speed-limit sign detected";
+        "🤖 AI is detecting...";
 
-    return;
 
-  }
+    const img = new Image();
 
-  detections.sort(
-    (a, b) => b.confidence - a.confidence
-  );
+    img.onload = async function(){
 
-  let html = "🚦 <b>Detected:</b><br><br>";
+        try{
 
-  detections.slice(0, 10).forEach((det, index) => {
+            const inputTensor =
+                imageToTensor(img);
 
-    const name =
-      CLASS_NAMES[det.classId] ||
-      "Unknown class " + det.classId;
+            /*
+            YOLO ONNX input name
+            */
 
-    const confidence =
-      (det.confidence * 100).toFixed(2);
+            const inputName =
+                session.inputNames[0];
 
-    html +=
-      `${index + 1}. ${name} → ${confidence}%<br>`;
+            const output =
+                await session.run({
 
-  });
+                    [inputName]:
+                        inputTensor
 
-  result.innerHTML = html;
+                });
 
-}
+            const outputTensor =
+                output[session.outputNames[0]];
 
-document
-  .getElementById("imageInput")
-  .addEventListener("change", function(event) {
+            console.log(
+                "RAW OUTPUT:",
+                outputTensor
+            );
 
-    const file = event.target.files[0];
 
-    if (!file) return;
+            /*
+            YOLO11 output normally:
+            [1, 13, 8400]
 
-    const img = document.getElementById("preview");
+            13 =
+            4 box + 9 classes
+            */
 
-    img.src = URL.createObjectURL(file);
+            const data =
+                outputTensor.data;
 
-    img.hidden = false;
+            const dims =
+                outputTensor.dims;
 
-    img.onload = () => {
+            let bestConfidence = 0;
+            let bestClass = -1;
 
-      detect(img);
+
+            /*
+            Handle YOLO output
+            */
+
+            const numClasses =
+                CLASS_NAMES.length;
+
+            const numPredictions =
+                dims[dims.length-1] === 8400
+                ? dims[dims.length-1]
+                : dims[dims.length-2];
+
+
+            if(dims.length === 3){
+
+                /*
+                Expected:
+                [1, 13, 8400]
+                */
+
+                const channels = dims[1];
+                const predictions = dims[2];
+
+                for(let i=0;i<predictions;i++){
+
+                    for(
+                        let c=0;
+                        c<numClasses;
+                        c++
+                    ){
+
+                        const confidence =
+                            data[
+                                (4+c)*predictions+i
+                            ];
+
+                        if(
+                            confidence >
+                            bestConfidence
+                        ){
+
+                            bestConfidence =
+                                confidence;
+
+                            bestClass = c;
+                        }
+                    }
+                }
+            }
+
+
+            if(bestClass === -1){
+
+                result.innerHTML =
+                    "❌ No speed-limit sign detected.";
+
+                return;
+            }
+
+
+            const className =
+                CLASS_NAMES[bestClass];
+
+            const signSpeed =
+                getSpeed(className);
+
+
+            if(signSpeed === null){
+
+                result.innerHTML =
+                    "⚠️ Detected: " +
+                    className;
+
+                return;
+            }
+
+
+            /*
+            Compare speed
+            */
+
+            if(carSpeed > signSpeed){
+
+                result.className =
+                    "warning";
+
+                result.innerHTML = `
+
+                    <h2>🚨 OVER SPEED!</h2>
+
+                    <p>🚦 Speed Limit Sign</p>
+
+                    <h2>${signSpeed} km/h</h2>
+
+                    <p>🚗 Your Car Speed</p>
+
+                    <h2>${carSpeed} km/h</h2>
+
+                    <hr>
+
+                    <b>
+                    ⚠️ You are ${carSpeed-signSpeed}
+                    km/h over the limit.
+                    </b>
+
+                    <p>
+                    🎯 AI Confidence:
+                    ${(bestConfidence*100).toFixed(2)}%
+                    </p>
+
+                `;
+
+            }else{
+
+                result.className =
+                    "safe";
+
+                result.innerHTML = `
+
+                    <h2>✅ SPEED OK</h2>
+
+                    <p>🚦 Speed Limit Sign</p>
+
+                    <h2>${signSpeed} km/h</h2>
+
+                    <p>🚗 Your Car Speed</p>
+
+                    <h2>${carSpeed} km/h</h2>
+
+                    <hr>
+
+                    <b>
+                    👍 You are within the speed limit.
+                    </b>
+
+                    <p>
+                    🎯 AI Confidence:
+                    ${(bestConfidence*100).toFixed(2)}%
+                    </p>
+
+                `;
+            }
+
+        }catch(error){
+
+            console.error(error);
+
+            result.innerHTML = `
+                ❌ Detection error
+                <br><br>
+                ${error.message}
+            `;
+        }
 
     };
 
-  });
-
-loadModel();
+    img.src =
+        URL.createObjectURL(file);
+}
 
 </script>
 
