@@ -2,497 +2,432 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <title>AI Traffic Sign Detection</title>
 
 <style>
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
 }
 
-:root {
-    --bg: #070b12;
-    --card: rgba(18, 25, 38, 0.88);
-    --border: rgba(255,255,255,0.09);
-    --text: #f5f7fb;
-    --muted: #8993a5;
-    --accent: #5eead4;
-    --accent2: #60a5fa;
-    --danger: #fb7185;
-    --warning: #fbbf24;
-    --success: #4ade80;
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#070b12;
+    color:#fff;
+    min-height:100vh;
 }
 
-body {
-    min-height: 100vh;
-    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
-                 "Segoe UI", sans-serif;
-    color: var(--text);
-    background:
-        radial-gradient(circle at 10% 10%, rgba(96,165,250,.15), transparent 28%),
-        radial-gradient(circle at 90% 20%, rgba(94,234,212,.10), transparent 25%),
-        var(--bg);
+header{
+    padding:18px;
+    border-bottom:1px solid #202938;
+    background:#0a0f18;
 }
 
-/* ---------- HEADER ---------- */
-
-header {
-    width: 100%;
-    padding: 22px 18px;
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(16px);
-    background: rgba(7,11,18,.72);
-    position: sticky;
-    top: 0;
-    z-index: 20;
+.header{
+    max-width:1000px;
+    margin:auto;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 
-.header-inner {
-    max-width: 1050px;
-    margin: auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
+.logo{
+    display:flex;
+    align-items:center;
+    gap:10px;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 11px;
+.logoIcon{
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    font-weight:bold;
+    background:linear-gradient(135deg,#5eead4,#60a5fa);
+    color:#071018;
 }
 
-.logo-icon {
-    width: 43px;
-    height: 43px;
-    border-radius: 13px;
-    display: grid;
-    place-items: center;
-    font-size: 22px;
-    background: linear-gradient(135deg, #5eead4, #60a5fa);
-    color: #071018;
-    font-weight: 900;
+.logo h1{
+    font-size:17px;
 }
 
-.logo-text h1 {
-    font-size: 18px;
-    letter-spacing: -.3px;
+.logo p{
+    color:#8993a5;
+    font-size:11px;
+    margin-top:3px;
 }
 
-.logo-text p {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 2px;
+.ready{
+    color:#4ade80;
+    font-size:12px;
 }
 
-.status {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 12px;
-    color: var(--muted);
+main{
+    max-width:1000px;
+    margin:auto;
+    padding:35px 16px 60px;
 }
 
-.status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 12px var(--success);
+.hero{
+    text-align:center;
+    margin-bottom:30px;
 }
 
-/* ---------- MAIN ---------- */
-
-main {
-    width: 100%;
-    max-width: 1050px;
-    margin: auto;
-    padding: 35px 18px 60px;
+.hero h2{
+    font-size:clamp(30px,7vw,48px);
 }
 
-.hero {
-    text-align: center;
-    margin-bottom: 30px;
+.hero span{
+    background:linear-gradient(90deg,#5eead4,#60a5fa);
+    -webkit-background-clip:text;
+    color:transparent;
 }
 
-.hero h2 {
-    font-size: clamp(28px, 6vw, 48px);
-    line-height: 1.05;
-    letter-spacing: -1.5px;
+.hero p{
+    color:#8993a5;
+    max-width:650px;
+    margin:12px auto;
+    line-height:1.6;
+    font-size:14px;
 }
 
-.hero h2 span {
-    background: linear-gradient(90deg, #5eead4, #60a5fa);
-    -webkit-background-clip: text;
-    color: transparent;
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
 }
 
-.hero p {
-    max-width: 650px;
-    margin: 13px auto 0;
-    color: var(--muted);
-    line-height: 1.6;
-    font-size: 14px;
+.card{
+    background:#101722;
+    border:1px solid #202938;
+    border-radius:20px;
+    padding:20px;
 }
 
-/* ---------- GRID ---------- */
-
-.grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
+.title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:15px;
 }
 
-.card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 20px;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 20px 60px rgba(0,0,0,.22);
+.title h3{
+    font-size:16px;
 }
 
-.card-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
+.badge{
+    font-size:10px;
+    color:#5eead4;
+    border:1px solid #254e4c;
+    padding:5px 9px;
+    border-radius:20px;
 }
 
-.card-title h3 {
-    font-size: 16px;
+/* UPLOAD */
+
+.upload{
+    width:100%;
+    min-height:290px;
+    border:2px dashed #334155;
+    border-radius:17px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    cursor:pointer;
+    overflow:hidden;
+    position:relative;
+    background:#0b111b;
 }
 
-.badge {
-    font-size: 10px;
-    padding: 5px 9px;
-    border-radius: 20px;
-    background: rgba(94,234,212,.10);
-    color: var(--accent);
-    border: 1px solid rgba(94,234,212,.18);
+.upload:hover{
+    border-color:#5eead4;
 }
 
-/* ---------- UPLOAD ---------- */
-
-.upload-box {
-    min-height: 300px;
-    border: 1px dashed rgba(255,255,255,.18);
-    border-radius: 17px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    cursor: pointer;
-    overflow: hidden;
-    transition: .2s;
-    position: relative;
+.uploadContent{
+    padding:20px;
 }
 
-.upload-box:hover {
-    border-color: var(--accent);
-    background: rgba(94,234,212,.025);
+.uploadIcon{
+    font-size:45px;
+    margin-bottom:12px;
 }
 
-.upload-content {
-    padding: 25px;
+.upload h4{
+    font-size:16px;
 }
 
-.upload-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
-    margin: 0 auto 15px;
-    display: grid;
-    place-items: center;
-    font-size: 28px;
-    background: rgba(96,165,250,.10);
-    border: 1px solid rgba(96,165,250,.18);
+.upload p{
+    color:#8993a5;
+    font-size:12px;
+    margin-top:7px;
+    line-height:1.5;
 }
 
-.upload-content h4 {
-    font-size: 16px;
+#preview{
+    display:none;
+    width:100%;
+    max-height:420px;
+    object-fit:contain;
 }
 
-.upload-content p {
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 7px;
+#imageInput{
+    display:none;
 }
 
-#imageInput {
-    display: none;
+/* CONTROLS */
+
+.controls{
+    margin-top:17px;
 }
 
-#preview {
-    display: none;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    max-height: 400px;
+label{
+    display:block;
+    color:#8993a5;
+    font-size:12px;
+    margin:12px 0 7px;
 }
 
-/* ---------- CONTROLS ---------- */
-
-.controls {
-    margin-top: 15px;
+input[type=password]{
+    width:100%;
+    padding:13px;
+    border-radius:11px;
+    border:1px solid #293548;
+    background:#080d15;
+    color:#fff;
+    outline:none;
 }
 
-label {
-    display: block;
-    font-size: 12px;
-    color: var(--muted);
-    margin-bottom: 7px;
+input[type=password]:focus{
+    border-color:#60a5fa;
 }
 
-input[type="password"],
-input[type="number"] {
-    width: 100%;
-    background: rgba(0,0,0,.25);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px;
-    color: white;
-    outline: none;
+.speedBox{
+    display:flex;
+    align-items:center;
+    gap:12px;
 }
 
-input:focus {
-    border-color: var(--accent2);
+#speedSlider{
+    flex:1;
+    cursor:pointer;
+    accent-color:#5eead4;
 }
 
-.speed-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.speedValue{
+    min-width:80px;
+    text-align:center;
+    padding:9px;
+    background:#182130;
+    border-radius:10px;
+    font-size:12px;
 }
 
-input[type="range"] {
-    flex: 1;
-    accent-color: var(--accent);
+button{
+    width:100%;
+    padding:14px;
+    margin-top:15px;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:bold;
+    font-size:14px;
+    background:linear-gradient(90deg,#5eead4,#60a5fa);
+    color:#061018;
 }
 
-.speed-value {
-    min-width: 75px;
-    text-align: center;
-    padding: 9px 10px;
-    border-radius: 10px;
-    background: rgba(255,255,255,.06);
-    font-size: 13px;
+button:disabled{
+    opacity:.45;
+    cursor:not-allowed;
 }
 
-/* ---------- BUTTON ---------- */
-
-button {
-    width: 100%;
-    border: none;
-    border-radius: 13px;
-    padding: 14px;
-    margin-top: 15px;
-    cursor: pointer;
-    font-weight: 800;
-    font-size: 14px;
-    color: #071018;
-    background: linear-gradient(90deg, #5eead4, #60a5fa);
-    transition: .2s;
+.reset{
+    background:#1a2230;
+    color:#fff;
+    border:1px solid #293548;
 }
 
-button:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.08);
+/* RESULTS */
+
+.empty{
+    min-height:290px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    color:#8993a5;
+    font-size:13px;
 }
 
-button:disabled {
-    opacity: .45;
-    cursor: not-allowed;
-    transform: none;
+.emptyIcon{
+    font-size:45px;
+    margin-bottom:12px;
 }
 
-.secondary {
-    background: rgba(255,255,255,.07);
-    color: white;
-    border: 1px solid var(--border);
+.loading{
+    display:none;
+    min-height:290px;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    text-align:center;
 }
 
-/* ---------- RESULTS ---------- */
-
-.result-empty {
-    min-height: 300px;
-    display: grid;
-    place-items: center;
-    text-align: center;
-    color: var(--muted);
+.spinner{
+    width:42px;
+    height:42px;
+    border:3px solid #263141;
+    border-top-color:#5eead4;
+    border-radius:50%;
+    animation:spin .8s linear infinite;
 }
 
-.result-empty-icon {
-    font-size: 42px;
-    margin-bottom: 12px;
+@keyframes spin{
+    to{transform:rotate(360deg)}
 }
 
-.loading {
-    display: none;
-    text-align: center;
-    padding: 55px 20px;
+.loading p{
+    margin-top:13px;
+    color:#8993a5;
+    font-size:13px;
 }
 
-.spinner {
-    width: 42px;
-    height: 42px;
-    margin: auto;
-    border: 3px solid rgba(255,255,255,.1);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
+.results{
+    display:none;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+.sign{
+    padding:14px;
+    background:#151e2b;
+    border:1px solid #263141;
+    border-radius:14px;
+    margin-bottom:10px;
 }
 
-.loading p {
-    margin-top: 15px;
-    color: var(--muted);
-    font-size: 13px;
+.signTop{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
 }
 
-/* ---------- SIGN CARDS ---------- */
-
-.sign-list {
-    display: grid;
-    gap: 11px;
+.signName{
+    font-weight:bold;
+    font-size:14px;
 }
 
-.sign-card {
-    padding: 14px;
-    border-radius: 15px;
-    background: rgba(255,255,255,.045);
-    border: 1px solid var(--border);
+.confidence{
+    color:#4ade80;
+    font-size:11px;
 }
 
-.sign-top {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
+.details{
+    display:flex;
+    flex-wrap:wrap;
+    gap:7px;
+    margin-top:9px;
 }
 
-.sign-name {
-    font-weight: 800;
-    font-size: 14px;
+.detail{
+    padding:5px 8px;
+    border-radius:7px;
+    background:#202a39;
+    color:#aab4c4;
+    font-size:11px;
 }
 
-.confidence {
-    font-size: 11px;
-    color: var(--success);
+.speedResult{
+    margin-top:15px;
+    padding:16px;
+    border-radius:14px;
+    background:#111c29;
+    border:1px solid #2b4359;
 }
 
-.sign-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 9px;
+.speedResult.safe{
+    border-color:#285b3d;
+    background:#0d1d15;
 }
 
-.detail {
-    font-size: 11px;
-    padding: 5px 8px;
-    border-radius: 7px;
-    background: rgba(255,255,255,.06);
-    color: var(--muted);
+.speedResult.warning{
+    border-color:#65501e;
+    background:#211b0b;
 }
 
-/* ---------- SPEED RESULT ---------- */
-
-.speed-result {
-    margin-top: 15px;
-    padding: 17px;
-    border-radius: 16px;
-    border: 1px solid rgba(96,165,250,.2);
-    background: rgba(96,165,250,.06);
+.speedResult.danger{
+    border-color:#63303b;
+    background:#210e13;
 }
 
-.speed-result.safe {
-    border-color: rgba(74,222,128,.25);
-    background: rgba(74,222,128,.06);
+.speedTitle{
+    font-size:20px;
+    font-weight:bold;
 }
 
-.speed-result.warning {
-    border-color: rgba(251,191,36,.25);
-    background: rgba(251,191,36,.06);
+.speedInfo{
+    color:#9ba6b7;
+    font-size:12px;
+    margin-top:7px;
+    line-height:1.6;
 }
 
-.speed-result.danger {
-    border-color: rgba(251,113,133,.25);
-    background: rgba(251,113,133,.06);
+.jsonBox{
+    margin-top:15px;
 }
 
-.speed-main {
-    font-size: 24px;
-    font-weight: 900;
+summary{
+    cursor:pointer;
+    color:#8993a5;
+    font-size:12px;
 }
 
-.speed-message {
-    color: var(--muted);
-    font-size: 12px;
-    margin-top: 5px;
+pre{
+    margin-top:10px;
+    padding:12px;
+    background:#05080d;
+    border-radius:10px;
+    overflow:auto;
+    color:#b9f6ee;
+    font-size:10px;
+    line-height:1.5;
 }
 
-/* ---------- RAW JSON ---------- */
-
-.raw-json {
-    margin-top: 15px;
+.error{
+    padding:15px;
+    border-radius:12px;
+    background:#220f14;
+    border:1px solid #66303a;
+    color:#ff9aaa;
+    font-size:12px;
+    line-height:1.6;
 }
 
-.raw-json summary {
-    cursor: pointer;
-    color: var(--muted);
-    font-size: 12px;
+footer{
+    text-align:center;
+    color:#667085;
+    font-size:11px;
+    margin-top:30px;
 }
 
-pre {
-    margin-top: 10px;
-    padding: 13px;
-    background: #03060b;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow-x: auto;
-    color: #b9f6ee;
-    font-size: 10px;
-    line-height: 1.5;
-}
+@media(max-width:750px){
 
-/* ---------- FOOTER ---------- */
-
-footer {
-    text-align: center;
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 30px;
-}
-
-/* ---------- MOBILE ---------- */
-
-@media (max-width: 760px) {
-    .grid {
-        grid-template-columns: 1fr;
+    .grid{
+        grid-template-columns:1fr;
     }
 
-    .header-inner {
-        align-items: flex-start;
+    .ready{
+        display:none;
     }
 
-    .status {
-        display: none;
+    main{
+        padding-top:25px;
     }
 
-    main {
-        padding-top: 25px;
-    }
-
-    .upload-box {
-        min-height: 250px;
+    .upload{
+        min-height:250px;
     }
 }
 </style>
@@ -501,222 +436,262 @@ footer {
 <body>
 
 <header>
-    <div class="header-inner">
 
-        <div class="logo">
-            <div class="logo-icon">AI</div>
+<div class="header">
 
-            <div class="logo-text">
-                <h1>Traffic Sign AI</h1>
-                <p>Intelligent Road Safety System</p>
-            </div>
-        </div>
+    <div class="logo">
 
-        <div class="status">
-            <span class="status-dot"></span>
-            AI Detection Ready
+        <div class="logoIcon">AI</div>
+
+        <div>
+            <h1>Traffic Sign AI -1</h1>
+            <p>Road Safety Detection System</p>
         </div>
 
     </div>
+
+    <div class="ready">
+        ● AI Ready
+    </div>
+
+</div>
+
 </header>
 
 
 <main>
 
-    <section class="hero">
+<section class="hero">
 
-        <h2>
-            AI Traffic Sign
-            <span>Detection</span>
-        </h2>
+    <h2>
+        AI Traffic Sign
+        <span>Detection</span>
+    </h2>
 
-        <p>
-            Upload a road image and let an advanced vision-language
-            model identify visible traffic signs and analyze speed limits.
-        </p>
+    <p>
+        Upload a road image and let AI identify visible
+        traffic signs, speed limits and road information.
+    </p>
 
-    </section>
-
-
-    <div class="grid">
-
-        <!-- LEFT SIDE -->
-
-        <section class="card">
-
-            <div class="card-title">
-                <h3>1. Upload Road Image</h3>
-                <span class="badge">IMAGE</span>
-            </div>
-
-            <div
-                class="upload-box"
-                id="uploadBox"
-                onclick="document.getElementById('imageInput').click()"
-            >
-
-                <div class="upload-content" id="uploadContent">
-
-                    <div class="upload-icon">
-                        📷
-                    </div>
-
-                    <h4>Select an image</h4>
-
-                    <p>
-                        JPG, PNG or WEBP<br>
-                        Choose a clear road image containing traffic signs
-                    </p>
-
-                </div>
-
-                <img id="preview" alt="Selected road image">
-
-            </div>
-
-            <input
-                type="file"
-                id="imageInput"
-                accept="image/png,image/jpeg,image/webp"
-            >
+</section>
 
 
-            <div class="controls">
+<div class="grid">
 
-                <label>
-                    Hugging Face API Token
-                </label>
+<!-- LEFT -->
 
-                <input
-                    type="password"
-                    id="apiToken"
-                    placeholder="hf_••••••••••••••••"
-                    autocomplete="off"
-                >
+<div class="card">
 
-                <label style="margin-top:14px;">
-                    Your Vehicle Speed
-                </label>
+    <div class="title">
 
-                <div class="speed-row">
+        <h3>1. Upload Image</h3>
 
-                    <input
-                        type="range"
-                        id="speedSlider"
-                        min="0"
-                        max="40"
-                        step="0.5"
-                        value="10"
-                    >
-
-                    <div class="speed-value">
-                        <span id="speedMs">10</span> m/s
-                        <br>
-                        <span id="speedKmh">36</span> km/h
-                    </div>
-
-                </div>
-
-
-                <button
-                    id="detectBtn"
-                    disabled
-                    onclick="detectSigns()"
-                >
-                    🔍 Detect Traffic Signs
-                </button>
-
-                <button
-                    class="secondary"
-                    onclick="resetDemo()"
-                >
-                    ↻ Reset Demo
-                </button>
-
-            </div>
-
-        </section>
-
-
-        <!-- RIGHT SIDE -->
-
-        <section class="card">
-
-            <div class="card-title">
-                <h3>2. Detection Results</h3>
-                <span class="badge">AI OUTPUT</span>
-            </div>
-
-
-            <div class="result-empty" id="emptyResult">
-
-                <div>
-                    <div class="result-empty-icon">
-                        🚦
-                    </div>
-
-                    <p>
-                        Upload an image to begin detection.
-                    </p>
-                </div>
-
-            </div>
-
-
-            <div class="loading" id="loading">
-
-                <div class="spinner"></div>
-
-                <p>
-                    AI is analyzing the road image...
-                </p>
-
-            </div>
-
-
-            <div id="results" style="display:none;">
-
-                <div
-                    id="signList"
-                    class="sign-list"
-                ></div>
-
-                <div
-                    id="speedResult"
-                    class="speed-result"
-                    style="display:none;"
-                ></div>
-
-
-                <details class="raw-json">
-
-                    <summary>
-                        View AI JSON response
-                    </summary>
-
-                    <pre id="rawJson"></pre>
-
-                </details>
-
-            </div>
-
-        </section>
+        <div class="badge">
+            SINGLE IMAGE
+        </div>
 
     </div>
 
 
-    <footer>
-        AI Traffic Sign Detection Demo • Built for Science Fair Presentation
-    </footer>
+    <div
+        class="upload"
+        id="uploadBox"
+    >
+
+        <div
+            class="uploadContent"
+            id="uploadContent"
+        >
+
+            <div class="uploadIcon">
+                📷
+            </div>
+
+            <h4>
+                Tap to select road image
+            </h4>
+
+            <p>
+                JPG • PNG • WEBP<br>
+                Choose an image containing traffic signs
+            </p>
+
+        </div>
+
+
+        <img
+            id="preview"
+            alt="Road image preview"
+        >
+
+    </div>
+
+
+    <input
+        id="imageInput"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+    >
+
+
+    <div class="controls">
+
+        <label>
+            Hugging Face API Token
+        </label>
+
+        <input
+            id="apiToken"
+            type="password"
+            placeholder="hf_..."
+            autocomplete="off"
+        >
+
+
+        <label>
+            Vehicle Speed
+        </label>
+
+        <div class="speedBox">
+
+            <input
+                id="speedSlider"
+                type="range"
+                min="0"
+                max="40"
+                step="0.1"
+                value="10"
+            >
+
+            <div class="speedValue">
+
+                <span id="speedMs">
+                    10.0
+                </span>
+                m/s
+
+                <br>
+
+                <span id="speedKmh">
+                    36
+                </span>
+                km/h
+
+            </div>
+
+        </div>
+
+
+        <button
+            id="detectBtn"
+            disabled
+        >
+            🔍 Detect Traffic Signs
+        </button>
+
+
+        <button
+            id="resetBtn"
+            class="reset"
+        >
+            ↻ Reset
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- RIGHT -->
+
+<div class="card">
+
+    <div class="title">
+
+        <h3>2. AI Results</h3>
+
+        <div class="badge">
+            GLM-4.5V
+        </div>
+
+    </div>
+
+
+    <div
+        id="empty"
+        class="empty"
+    >
+
+        <div>
+
+            <div class="emptyIcon">
+                🚦
+            </div>
+
+            Upload an image to start detection.
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="loading"
+        class="loading"
+    >
+
+        <div class="spinner"></div>
+
+        <p>
+            AI is analyzing the image...
+        </p>
+
+    </div>
+
+
+    <div
+        id="results"
+        class="results"
+    >
+
+        <div id="signList"></div>
+
+        <div
+            id="speedResult"
+            class="speedResult"
+            style="display:none"
+        ></div>
+
+
+        <details class="jsonBox">
+
+            <summary>
+                View AI JSON
+            </summary>
+
+            <pre id="rawJson"></pre>
+
+        </details>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<footer>
+    AI Traffic Sign Detection • Science Fair Demo
+</footer>
 
 </main>
 
 
 <script>
 
-/* ============================================================
-   CONFIGURATION
-   ============================================================ */
+/* =========================================================
+   CONFIG
+========================================================= */
 
 const MODEL = "zai-org/GLM-4.5V";
 
@@ -724,21 +699,21 @@ const API_URL =
     "https://router.huggingface.co/v1/chat/completions";
 
 
-/* ============================================================
-   ELEMENTS
-   ============================================================ */
+/* =========================================================
+   GET ELEMENTS
+========================================================= */
+
+const uploadBox =
+    document.getElementById("uploadBox");
+
+const uploadContent =
+    document.getElementById("uploadContent");
 
 const imageInput =
     document.getElementById("imageInput");
 
 const preview =
     document.getElementById("preview");
-
-const uploadContent =
-    document.getElementById("uploadContent");
-
-const detectBtn =
-    document.getElementById("detectBtn");
 
 const apiToken =
     document.getElementById("apiToken");
@@ -752,8 +727,14 @@ const speedMs =
 const speedKmh =
     document.getElementById("speedKmh");
 
-const emptyResult =
-    document.getElementById("emptyResult");
+const detectBtn =
+    document.getElementById("detectBtn");
+
+const resetBtn =
+    document.getElementById("resetBtn");
+
+const empty =
+    document.getElementById("empty");
 
 const loading =
     document.getElementById("loading");
@@ -771,57 +752,67 @@ const rawJson =
     document.getElementById("rawJson");
 
 
-let imageDataURL = null;
+let imageData = null;
 
 
-/* ============================================================
-   SPEED
-   ============================================================ */
+/* =========================================================
+   UPLOAD BOX
+========================================================= */
 
-function updateSpeed() {
-
-    const ms =
-        Number(speedSlider.value);
-
-    const kmh =
-        ms * 3.6;
-
-    speedMs.textContent =
-        ms.toFixed(1).replace(".0", "");
-
-    speedKmh.textContent =
-        Math.round(kmh);
-}
-
-speedSlider.addEventListener(
-    "input",
-    updateSpeed
+uploadBox.addEventListener(
+    "click",
+    function(){
+        imageInput.click();
+    }
 );
 
-updateSpeed();
 
-
-/* ============================================================
-   IMAGE UPLOAD
-   ============================================================ */
+/* =========================================================
+   FILE SELECT
+========================================================= */
 
 imageInput.addEventListener(
     "change",
-    async function () {
+    function(event){
 
-        const file = this.files[0];
+        const file =
+            event.target.files[0];
 
-        if (!file) {
+        if(!file){
             return;
         }
 
-        try {
+        if(!file.type.startsWith("image/")){
 
-            imageDataURL =
-                await compressImage(file);
+            alert(
+                "Please select an image file."
+            );
+
+            return;
+        }
+
+        loadImage(file);
+    }
+);
+
+
+/* =========================================================
+   LOAD IMAGE
+========================================================= */
+
+function loadImage(file){
+
+    const reader =
+        new FileReader();
+
+    reader.onload =
+        function(event){
+
+            imageData =
+                event.target.result;
 
             preview.src =
-                imageDataURL;
+                imageData;
 
             preview.style.display =
                 "block";
@@ -833,124 +824,74 @@ imageInput.addEventListener(
                 false;
 
             clearResults();
-
-        } catch (error) {
-
-            alert(
-                "Could not process the image."
-            );
-
-        }
-
-    }
-);
-
-
-/* ============================================================
-   IMAGE COMPRESSION
-   ============================================================ */
-
-function compressImage(file) {
-
-    return new Promise((resolve, reject) => {
-
-        const reader =
-            new FileReader();
-
-        reader.onload = function () {
-
-            const img =
-                new Image();
-
-            img.onload = function () {
-
-                const MAX_SIZE = 1280;
-
-                let width =
-                    img.width;
-
-                let height =
-                    img.height;
-
-
-                if (width > MAX_SIZE) {
-
-                    height =
-                        height * MAX_SIZE / width;
-
-                    width =
-                        MAX_SIZE;
-                }
-
-
-                if (height > MAX_SIZE) {
-
-                    width =
-                        width * MAX_SIZE / height;
-
-                    height =
-                        MAX_SIZE;
-                }
-
-
-                const canvas =
-                    document.createElement("canvas");
-
-                canvas.width =
-                    Math.round(width);
-
-                canvas.height =
-                    Math.round(height);
-
-
-                const ctx =
-                    canvas.getContext("2d");
-
-                ctx.drawImage(
-                    img,
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height
-                );
-
-
-                resolve(
-                    canvas.toDataURL(
-                        "image/jpeg",
-                        0.82
-                    )
-                );
-
-            };
-
-            img.onerror =
-                reject;
-
-            img.src =
-                reader.result;
         };
 
-        reader.onerror =
-            reject;
+    reader.onerror =
+        function(){
 
-        reader.readAsDataURL(file);
+            alert(
+                "Could not read the image."
+            );
 
-    });
+        };
 
+    reader.readAsDataURL(file);
 }
 
 
-/* ============================================================
-   MAIN DETECTION
-   ============================================================ */
+/* =========================================================
+   SPEED SLIDER
+========================================================= */
 
-async function detectSigns() {
+function updateSpeed(){
 
-    if (!imageDataURL) {
+    const ms =
+        parseFloat(speedSlider.value);
+
+    const kmh =
+        ms * 3.6;
+
+    speedMs.textContent =
+        ms.toFixed(1);
+
+    speedKmh.textContent =
+        kmh.toFixed(1);
+}
+
+
+speedSlider.addEventListener(
+    "input",
+    updateSpeed
+);
+
+speedSlider.addEventListener(
+    "change",
+    updateSpeed
+);
+
+updateSpeed();
+
+
+/* =========================================================
+   DETECT BUTTON
+========================================================= */
+
+detectBtn.addEventListener(
+    "click",
+    detectSigns
+);
+
+
+/* =========================================================
+   DETECTION
+========================================================= */
+
+async function detectSigns(){
+
+    if(!imageData){
 
         alert(
-            "Please upload an image first."
+            "First upload an image."
         );
 
         return;
@@ -961,10 +902,10 @@ async function detectSigns() {
         apiToken.value.trim();
 
 
-    if (!token) {
+    if(!token){
 
         alert(
-            "Please enter your Hugging Face API token."
+            "Enter your Hugging Face API token first."
         );
 
         apiToken.focus();
@@ -976,39 +917,40 @@ async function detectSigns() {
     setLoading(true);
 
 
-    const prompt = `You are an expert traffic-sign recognition AI.
+    const prompt = `
+You are an expert traffic sign recognition AI.
 
-Analyze the provided road image carefully.
+Analyze the provided road image.
 
-TASK:
-Identify EVERY clearly visible traffic sign in the image.
+Identify ALL clearly visible traffic signs.
 
-This may include:
-- speed limit signs
+Look for:
+- speed limits
 - stop signs
 - traffic lights
 - mandatory direction signs
 - warning signs
-- no-entry signs
+- no entry signs
 - pedestrian signs
 - bus stop signs
 - parking signs
 - turn signs
-- other road/traffic signs
+- other traffic signs
 
-IMPORTANT:
-1. Do not invent signs.
-2. Only report signs that are actually visible.
-3. If multiple signs are visible, report ALL of them.
+IMPORTANT RULES:
+
+1. Only report signs actually visible.
+2. Do not invent signs.
+3. Detect multiple signs if multiple signs are visible.
 4. Read speed-limit numbers carefully.
-5. For speed-limit signs, extract the numerical speed.
-6. Give an approximate image position.
+5. For speed-limit signs, return the numerical speed.
+6. Estimate the sign position in the image.
 7. Confidence must be between 0 and 1.
 8. Return ONLY valid JSON.
-9. Do not use Markdown.
-10. Do not add explanations outside JSON.
+9. No Markdown.
+10. No explanation outside JSON.
 
-Return exactly this structure:
+Use exactly this structure:
 
 {
   "signs": [
@@ -1022,40 +964,753 @@ Return exactly this structure:
   ]
 }
 
-Rules:
-- For non-speed signs, speed_kmh must be null.
-- If no traffic sign is clearly visible, return:
-  {"signs":[]}
-- position must be one of:
-  "left", "center", "right", "top-left", "top-right", "bottom-left", "bottom-right"
-- type should be short and descriptive.
-- confidence must be a decimal from 0 to 1.`;
+For non-speed signs:
+"speed_kmh": null
+
+Allowed positions:
+left
+center
+right
+top-left
+top-right
+bottom-left
+bottom-right
+
+If there are no clearly visible traffic signs:
+
+{
+  "signs": []
+}
+`;
 
 
-    try {
+    try{
 
         const response =
-            await fetch(API_URL, {
+            await fetch(
+                API_URL,
+                {
+                    method:"POST",
 
-                method: "POST",
+                    headers:{
+                        "Authorization":
+                            "Bearer " + token,
 
-                headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-                    "Authorization":
-                        "Bearer " + token,
+                    body:JSON.stringify({
 
-                    "Content-Type":
-                        "application/json"
+                        model:MODEL,
 
-                },
+                        messages:[
+                            {
+                                role:"user",
 
-                body: JSON.stringify({
+                                content:[
+                                    {
+                                        type:"text",
+                                        text:prompt
+                                    },
 
-                    model: MODEL,
+                                    {
+                                        type:"image_url",
 
-                    messages: [
+                                        image_url:{
+                                            url:imageData
+                                        }
+                                    }
+                                ]
+                            }
+                        ],
 
-                        {
-                            role: "user",
+                        max_tokens:700,
 
-   
+                        temperature:0.1
+                    })
+                }
+            );
+
+
+        const responseText =
+            await response.text();
+
+
+        if(!response.ok){
+
+            throw new Error(
+                "HTTP " +
+                response.status +
+                ": " +
+                responseText
+            );
+        }
+
+
+        let data;
+
+        try{
+
+            data =
+                JSON.parse(responseText);
+
+        }catch(error){
+
+            throw new Error(
+                "The API returned invalid data."
+            );
+        }
+
+
+        const modelText =
+            getModelText(data);
+
+
+        const json =
+            parseAIJson(modelText);
+
+
+        if(!json){
+
+            throw new Error(
+                "AI response was not valid JSON."
+            );
+        }
+
+
+        displayResults(
+            json,
+            modelText
+        );
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showError(
+            error.message
+        );
+
+    }finally{
+
+        setLoading(false);
+    }
+}
+
+
+/* =========================================================
+   GET MODEL TEXT
+========================================================= */
+
+function getModelText(data){
+
+    if(
+        !data.choices ||
+        !data.choices.length
+    ){
+
+        throw new Error(
+            "No response from AI."
+        );
+    }
+
+
+    const message =
+        data.choices[0].message;
+
+
+    let content =
+        message?.content;
+
+
+    if(typeof content === "string"){
+
+        return content;
+    }
+
+
+    if(Array.isArray(content)){
+
+        return content
+            .map(
+                item =>
+                    item.text || ""
+            )
+            .join("");
+    }
+
+
+    throw new Error(
+        "Could not read AI response."
+    );
+}
+
+
+/* =========================================================
+   PARSE JSON
+========================================================= */
+
+function parseAIJson(text){
+
+    if(!text){
+        return null;
+    }
+
+
+    let clean =
+        text
+            .replace(/```json/gi,"")
+            .replace(/```/g,"")
+            .trim();
+
+
+    try{
+
+        return JSON.parse(clean);
+
+    }catch(e){}
+
+
+    const start =
+        clean.indexOf("{");
+
+    const end =
+        clean.lastIndexOf("}");
+
+
+    if(
+        start !== -1 &&
+        end !== -1
+    ){
+
+        const jsonText =
+            clean.substring(
+                start,
+                end + 1
+            );
+
+        try{
+
+            return JSON.parse(
+                jsonText
+            );
+
+        }catch(e){}
+    }
+
+
+    return null;
+}
+
+
+/* =========================================================
+   DISPLAY
+========================================================= */
+
+function displayResults(
+    data,
+    modelText
+){
+
+    empty.style.display =
+        "none";
+
+    loading.style.display =
+        "none";
+
+    results.style.display =
+        "block";
+
+
+    signList.innerHTML =
+        "";
+
+    rawJson.textContent =
+        JSON.stringify(
+            data,
+            null,
+            2
+        );
+
+
+    const signs =
+        Array.isArray(data.signs)
+            ? data.signs
+            : [];
+
+
+    if(signs.length === 0){
+
+        signList.innerHTML = `
+
+            <div class="sign">
+
+                <div class="signName">
+                    No Traffic Sign Detected
+                </div>
+
+                <div class="details">
+
+                    <div class="detail">
+                        No clearly visible sign was identified.
+                    </div>
+
+                </div>
+
+            </div>
+
+        `;
+
+        speedResult.style.display =
+            "none";
+
+        return;
+    }
+
+
+    signs.forEach(
+        function(sign){
+
+            const confidence =
+                Number(sign.confidence);
+
+
+            const confidenceText =
+                Number.isFinite(
+                    confidence
+                )
+                ? Math.round(
+                    confidence * 100
+                ) + "%"
+                : "N/A";
+
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+            card.className =
+                "sign";
+
+
+            card.innerHTML = `
+
+                <div class="signTop">
+
+                    <div class="signName">
+                        🚦 ${escapeHTML(
+                            formatType(
+                                sign.type
+                            )
+                        )}
+                    </div>
+
+                    <div class="confidence">
+                        ${confidenceText}
+                    </div>
+
+                </div>
+
+                <div class="details">
+
+                    ${
+                        sign.text
+                        ?
+                        `
+                        <div class="detail">
+                            🏷️ ${escapeHTML(
+                                sign.text
+                            )}
+                        </div>
+                        `
+                        :
+                        ""
+                    }
+
+                    ${
+                        sign.speed_kmh !== null &&
+                        sign.speed_kmh !== undefined
+                        ?
+                        `
+                        <div class="detail">
+                            🚗 Limit:
+                            ${escapeHTML(
+                                String(
+                                    sign.speed_kmh
+                                )
+                            )}
+                            km/h
+                        </div>
+                        `
+                        :
+                        ""
+                    }
+
+                    ${
+                        sign.position
+                        ?
+                        `
+                        <div class="detail">
+                            📍 ${escapeHTML(
+                                sign.position
+                            )}
+                        </div>
+                        `
+                        :
+                        ""
+                    }
+
+                </div>
+            `;
+
+
+            signList.appendChild(
+                card
+            );
+
+        }
+    );
+
+
+    analyzeSpeed(
+        signs
+    );
+}
+
+
+/* =========================================================
+   SPEED ANALYSIS
+========================================================= */
+
+function analyzeSpeed(signs){
+
+    const speedSigns =
+        signs.filter(
+            sign =>
+                sign.speed_kmh !== null &&
+                sign.speed_kmh !== undefined &&
+                Number.isFinite(
+                    Number(
+                        sign.speed_kmh
+                    )
+                )
+        );
+
+
+    if(!speedSigns.length){
+
+        speedResult.style.display =
+            "none";
+
+        return;
+    }
+
+
+    const limits =
+        speedSigns.map(
+            sign =>
+                Number(
+                    sign.speed_kmh
+                )
+        );
+
+
+    const limit =
+        Math.min(...limits);
+
+
+    const vehicleMs =
+        parseFloat(
+            speedSlider.value
+        );
+
+
+    const vehicleKmh =
+        vehicleMs * 3.6;
+
+
+    const difference =
+        vehicleKmh - limit;
+
+
+    speedResult.style.display =
+        "block";
+
+
+    if(difference <= 0){
+
+        speedResult.className =
+            "speedResult safe";
+
+        speedResult.innerHTML = `
+
+            <div class="speedTitle">
+                ✅ Within Speed Limit
+            </div>
+
+            <div class="speedInfo">
+
+                Detected limit:
+                <strong>${limit} km/h</strong>
+
+                <br>
+
+                Vehicle speed:
+                <strong>
+                    ${vehicleKmh.toFixed(1)} km/h
+                </strong>
+
+            </div>
+        `;
+
+    }else if(difference <= 10){
+
+        speedResult.className =
+            "speedResult warning";
+
+        speedResult.innerHTML = `
+
+            <div class="speedTitle">
+                ⚠️ Speed Limit Exceeded
+            </div>
+
+            <div class="speedInfo">
+
+                Detected limit:
+                <strong>${limit} km/h</strong>
+
+                <br>
+
+                Vehicle speed:
+                <strong>
+                    ${vehicleKmh.toFixed(1)} km/h
+                </strong>
+
+                <br>
+
+                Over by:
+                <strong>
+                    ${difference.toFixed(1)} km/h
+                </strong>
+
+            </div>
+        `;
+
+    }else{
+
+        speedResult.className =
+            "speedResult danger";
+
+        speedResult.innerHTML = `
+
+            <div class="speedTitle">
+                🚨 High Speed
+            </div>
+
+            <div class="speedInfo">
+
+                Detected limit:
+                <strong>${limit} km/h</strong>
+
+                <br>
+
+                Vehicle speed:
+                <strong>
+                    ${vehicleKmh.toFixed(1)} km/h
+                </strong>
+
+                <br>
+
+                Over by:
+                <strong>
+                    ${difference.toFixed(1)} km/h
+                </strong>
+
+            </div>
+        `;
+    }
+}
+
+
+/* =========================================================
+   FORMAT TYPE
+========================================================= */
+
+function formatType(type){
+
+    if(!type){
+        return "Traffic Sign";
+    }
+
+    return String(type)
+        .replace(/_/g," ")
+        .replace(
+            /\b\w/g,
+            char =>
+                char.toUpperCase()
+        );
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+function setLoading(state){
+
+    if(state){
+
+        empty.style.display =
+            "none";
+
+        results.style.display =
+            "none";
+
+        loading.style.display =
+            "flex";
+
+        detectBtn.disabled =
+            true;
+
+        detectBtn.textContent =
+            "⏳ Detecting...";
+
+    }else{
+
+        loading.style.display =
+            "none";
+
+        detectBtn.disabled =
+            !imageData;
+
+        detectBtn.textContent =
+            "🔍 Detect Traffic Signs";
+    }
+}
+
+
+/* =========================================================
+   CLEAR
+========================================================= */
+
+function clearResults(){
+
+    empty.style.display =
+        "flex";
+
+    loading.style.display =
+        "none";
+
+    results.style.display =
+        "none";
+
+    signList.innerHTML =
+        "";
+
+    speedResult.style.display =
+        "none";
+
+    rawJson.textContent =
+        "";
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+function showError(message){
+
+    empty.style.display =
+        "none";
+
+    loading.style.display =
+        "none";
+
+    results.style.display =
+        "block";
+
+
+    signList.innerHTML = `
+
+        <div class="error">
+
+            <strong>Detection failed</strong>
+
+            <br><br>
+
+            ${escapeHTML(message)}
+
+            <br><br>
+
+            Check:
+            <br>
+            • Hugging Face token
+            <br>
+            • Inference permission
+            <br>
+            • Available credits
+            <br>
+            • Internet connection
+
+        </div>
+
+    `;
+
+    speedResult.style.display =
+        "none";
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+resetBtn.addEventListener(
+    "click",
+    function(){
+
+        imageInput.value =
+            "";
+
+        imageData =
+            null;
+
+        preview.src =
+            "";
+
+        preview.style.display =
+            "none";
+
+        uploadContent.style.display =
+            "block";
+
+        clearResults();
+
+        detectBtn.disabled =
+            true;
+    }
+);
+
+</script>
+
+</body>
+</html>
