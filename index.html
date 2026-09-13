@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-
 <title>AI Traffic Sign Detection</title>
 
 <style>
@@ -127,8 +126,6 @@ main{
     border-radius:20px;
 }
 
-/* UPLOAD */
-
 .upload{
     width:100%;
     min-height:290px;
@@ -179,8 +176,6 @@ main{
     display:none;
 }
 
-/* CONTROLS */
-
 .controls{
     margin-top:17px;
 }
@@ -219,7 +214,7 @@ input[type=password]:focus{
 }
 
 .speedValue{
-    min-width:80px;
+    min-width:85px;
     text-align:center;
     padding:9px;
     background:#182130;
@@ -250,8 +245,6 @@ button:disabled{
     color:#fff;
     border:1px solid #293548;
 }
-
-/* RESULTS */
 
 .empty{
     min-height:290px;
@@ -413,7 +406,6 @@ footer{
 }
 
 @media(max-width:750px){
-
     .grid{
         grid-template-columns:1fr;
     }
@@ -436,18 +428,15 @@ footer{
 <body>
 
 <header>
-
 <div class="header">
 
     <div class="logo">
-
         <div class="logoIcon">AI</div>
 
         <div>
-            <h1>Traffic Sign AI -1</h1>
+            <h1>Traffic Sign AI</h1>
             <p>Road Safety Detection System</p>
         </div>
-
     </div>
 
     <div class="ready">
@@ -455,7 +444,6 @@ footer{
     </div>
 
 </div>
-
 </header>
 
 
@@ -478,20 +466,14 @@ footer{
 
 <div class="grid">
 
-<!-- LEFT -->
+<!-- UPLOAD -->
 
 <div class="card">
 
     <div class="title">
-
         <h3>1. Upload Image</h3>
-
-        <div class="badge">
-            SINGLE IMAGE
-        </div>
-
+        <div class="badge">SINGLE IMAGE</div>
     </div>
-
 
     <div
         class="upload"
@@ -503,13 +485,9 @@ footer{
             id="uploadContent"
         >
 
-            <div class="uploadIcon">
-                📷
-            </div>
+            <div class="uploadIcon">📷</div>
 
-            <h4>
-                Tap to select road image
-            </h4>
+            <h4>Tap to select road image</h4>
 
             <p>
                 JPG • PNG • WEBP<br>
@@ -517,7 +495,6 @@ footer{
             </p>
 
         </div>
-
 
         <img
             id="preview"
@@ -536,9 +513,7 @@ footer{
 
     <div class="controls">
 
-        <label>
-            Hugging Face API Token
-        </label>
+        <label>Hugging Face API Token</label>
 
         <input
             id="apiToken"
@@ -548,9 +523,7 @@ footer{
         >
 
 
-        <label>
-            Vehicle Speed
-        </label>
+        <label>Vehicle Speed</label>
 
         <div class="speedBox">
 
@@ -564,19 +537,9 @@ footer{
             >
 
             <div class="speedValue">
-
-                <span id="speedMs">
-                    10.0
-                </span>
-                m/s
-
+                <span id="speedMs">10.0</span> m/s
                 <br>
-
-                <span id="speedKmh">
-                    36
-                </span>
-                km/h
-
+                <span id="speedKmh">36.0</span> km/h
             </div>
 
         </div>
@@ -602,7 +565,7 @@ footer{
 </div>
 
 
-<!-- RIGHT -->
+<!-- RESULTS -->
 
 <div class="card">
 
@@ -617,42 +580,26 @@ footer{
     </div>
 
 
-    <div
-        id="empty"
-        class="empty"
-    >
+    <div id="empty" class="empty">
 
         <div>
-
-            <div class="emptyIcon">
-                🚦
-            </div>
-
+            <div class="emptyIcon">🚦</div>
             Upload an image to start detection.
-
         </div>
 
     </div>
 
 
-    <div
-        id="loading"
-        class="loading"
-    >
+    <div id="loading" class="loading">
 
         <div class="spinner"></div>
 
-        <p>
-            AI is analyzing the image...
-        </p>
+        <p>AI is analyzing the image...</p>
 
     </div>
 
 
-    <div
-        id="results"
-        class="results"
-    >
+    <div id="results" class="results">
 
         <div id="signList"></div>
 
@@ -665,9 +612,7 @@ footer{
 
         <details class="jsonBox">
 
-            <summary>
-                View AI JSON
-            </summary>
+            <summary>View AI JSON</summary>
 
             <pre id="rawJson"></pre>
 
@@ -681,7 +626,7 @@ footer{
 
 
 <footer>
-    AI Traffic Sign Detection • Science Fair Demo
+AI Traffic Sign Detection • Science Fair Demo
 </footer>
 
 </main>
@@ -690,7 +635,7 @@ footer{
 <script>
 
 /* =========================================================
-   CONFIG
+   CONFIGURATION
 ========================================================= */
 
 const MODEL = "zai-org/GLM-4.5V";
@@ -700,7 +645,7 @@ const API_URL =
 
 
 /* =========================================================
-   GET ELEMENTS
+   ELEMENTS
 ========================================================= */
 
 const uploadBox =
@@ -756,100 +701,86 @@ let imageData = null;
 
 
 /* =========================================================
-   UPLOAD BOX
+   UPLOAD
 ========================================================= */
 
-uploadBox.addEventListener(
-    "click",
-    function(){
-        imageInput.click();
+uploadBox.addEventListener("click", function(){
+
+    imageInput.click();
+
+});
+
+
+imageInput.addEventListener("change", function(event){
+
+    const file =
+        event.target.files[0];
+
+    if(!file){
+        return;
     }
-);
 
+    if(!file.type.startsWith("image/")){
 
-/* =========================================================
-   FILE SELECT
-========================================================= */
+        alert("Please select an image.");
 
-imageInput.addEventListener(
-    "change",
-    function(event){
-
-        const file =
-            event.target.files[0];
-
-        if(!file){
-            return;
-        }
-
-        if(!file.type.startsWith("image/")){
-
-            alert(
-                "Please select an image file."
-            );
-
-            return;
-        }
-
-        loadImage(file);
+        return;
     }
-);
-
-
-/* =========================================================
-   LOAD IMAGE
-========================================================= */
-
-function loadImage(file){
 
     const reader =
         new FileReader();
 
-    reader.onload =
-        function(event){
 
-            imageData =
-                event.target.result;
+    reader.onload = function(e){
 
-            preview.src =
-                imageData;
+        imageData =
+            e.target.result;
 
-            preview.style.display =
-                "block";
+        preview.src =
+            imageData;
 
-            uploadContent.style.display =
-                "none";
+        preview.style.display =
+            "block";
 
-            detectBtn.disabled =
-                false;
+        uploadContent.style.display =
+            "none";
 
-            clearResults();
-        };
+        detectBtn.disabled =
+            false;
 
-    reader.onerror =
-        function(){
+        clearResults();
 
-            alert(
-                "Could not read the image."
-            );
+    };
 
-        };
+
+    reader.onerror = function(){
+
+        alert(
+            "Could not read this image."
+        );
+
+    };
+
 
     reader.readAsDataURL(file);
-}
+
+});
 
 
 /* =========================================================
-   SPEED SLIDER
+   SPEED
 ========================================================= */
 
 function updateSpeed(){
 
     const ms =
-        parseFloat(speedSlider.value);
+        parseFloat(
+            speedSlider.value
+        );
 
     const kmh =
         ms * 3.6;
+
 
     speedMs.textContent =
         ms.toFixed(1);
@@ -873,7 +804,7 @@ updateSpeed();
 
 
 /* =========================================================
-   DETECT BUTTON
+   DETECT
 ========================================================= */
 
 detectBtn.addEventListener(
@@ -882,16 +813,12 @@ detectBtn.addEventListener(
 );
 
 
-/* =========================================================
-   DETECTION
-========================================================= */
-
 async function detectSigns(){
 
     if(!imageData){
 
         alert(
-            "First upload an image."
+            "Please upload an image first."
         );
 
         return;
@@ -905,10 +832,8 @@ async function detectSigns(){
     if(!token){
 
         alert(
-            "Enter your Hugging Face API token first."
+            "Please enter your Hugging Face API token."
         );
-
-        apiToken.focus();
 
         return;
     }
@@ -920,37 +845,29 @@ async function detectSigns(){
     const prompt = `
 You are an expert traffic sign recognition AI.
 
-Analyze the provided road image.
+Analyze the supplied road image.
 
-Identify ALL clearly visible traffic signs.
+Identify EVERY clearly visible traffic sign.
 
-Look for:
-- speed limits
-- stop signs
-- traffic lights
-- mandatory direction signs
-- warning signs
-- no entry signs
-- pedestrian signs
-- bus stop signs
-- parking signs
-- turn signs
-- other traffic signs
+Possible signs include:
+speed limits, stop signs, traffic lights,
+mandatory directions, warning signs, no-entry,
+pedestrian, bus stop, parking, turn signs,
+and other road traffic signs.
 
-IMPORTANT RULES:
+IMPORTANT:
 
-1. Only report signs actually visible.
-2. Do not invent signs.
-3. Detect multiple signs if multiple signs are visible.
-4. Read speed-limit numbers carefully.
-5. For speed-limit signs, return the numerical speed.
-6. Estimate the sign position in the image.
-7. Confidence must be between 0 and 1.
-8. Return ONLY valid JSON.
-9. No Markdown.
-10. No explanation outside JSON.
+- Only report signs actually visible.
+- Do not invent signs.
+- Detect every clearly visible sign.
+- Read speed-limit numbers carefully.
+- Return speed_kmh as a number for speed-limit signs.
+- Return null for speed_kmh for other signs.
+- confidence must be between 0 and 1.
+- position must describe where the sign appears.
+- Return JSON only.
 
-Use exactly this structure:
+Required JSON structure:
 
 {
   "signs": [
@@ -959,24 +876,12 @@ Use exactly this structure:
       "text": "SPEED 20 KM/H",
       "speed_kmh": 20,
       "position": "left",
-      "confidence": 0.98
+      "confidence": 0.99
     }
   ]
 }
 
-For non-speed signs:
-"speed_kmh": null
-
-Allowed positions:
-left
-center
-right
-top-left
-top-right
-bottom-left
-bottom-right
-
-If there are no clearly visible traffic signs:
+If no clearly visible traffic signs exist:
 
 {
   "signs": []
@@ -1025,9 +930,19 @@ If there are no clearly visible traffic signs:
                             }
                         ],
 
+                        /*
+                         * HF supports JSON response format.
+                         * This prevents the model from returning
+                         * normal explanatory text.
+                         */
+
+                        response_format:{
+                            type:"json_object"
+                        },
+
                         max_tokens:700,
 
-                        temperature:0.1
+                        temperature:0
                     })
                 }
             );
@@ -1053,35 +968,43 @@ If there are no clearly visible traffic signs:
         try{
 
             data =
-                JSON.parse(responseText);
+                JSON.parse(
+                    responseText
+                );
 
-        }catch(error){
+        }catch(e){
 
             throw new Error(
-                "The API returned invalid data."
+                "Hugging Face returned invalid API data."
             );
         }
 
 
         const modelText =
-            getModelText(data);
+            extractText(data);
 
 
-        const json =
-            parseAIJson(modelText);
+        const parsed =
+            parseJSON(modelText);
 
 
-        if(!json){
+        if(!parsed){
+
+            /*
+             * Sometimes a provider may return
+             * slightly different content formatting.
+             */
 
             throw new Error(
-                "AI response was not valid JSON."
+                "AI returned content, but it was not valid JSON.\n\n" +
+                "Raw response:\n" +
+                modelText
             );
         }
 
 
         displayResults(
-            json,
-            modelText
+            parsed
         );
 
 
@@ -1096,15 +1019,16 @@ If there are no clearly visible traffic signs:
     }finally{
 
         setLoading(false);
+
     }
 }
 
 
 /* =========================================================
-   GET MODEL TEXT
+   EXTRACT RESPONSE
 ========================================================= */
 
-function getModelText(data){
+function extractText(data){
 
     if(
         !data.choices ||
@@ -1112,7 +1036,7 @@ function getModelText(data){
     ){
 
         throw new Error(
-            "No response from AI."
+            "No AI response received."
         );
     }
 
@@ -1121,7 +1045,7 @@ function getModelText(data){
         data.choices[0].message;
 
 
-    let content =
+    const content =
         message?.content;
 
 
@@ -1143,7 +1067,7 @@ function getModelText(data){
 
 
     throw new Error(
-        "Could not read AI response."
+        "Could not read AI response content."
     );
 }
 
@@ -1152,18 +1076,18 @@ function getModelText(data){
    PARSE JSON
 ========================================================= */
 
-function parseAIJson(text){
+function parseJSON(text){
 
     if(!text){
         return null;
     }
 
 
-    let clean =
+    const clean =
         text
-            .replace(/```json/gi,"")
-            .replace(/```/g,"")
-            .trim();
+        .replace(/```json/gi,"")
+        .replace(/```/g,"")
+        .trim();
 
 
     try{
@@ -1182,19 +1106,17 @@ function parseAIJson(text){
 
     if(
         start !== -1 &&
-        end !== -1
+        end !== -1 &&
+        end > start
     ){
-
-        const jsonText =
-            clean.substring(
-                start,
-                end + 1
-            );
 
         try{
 
             return JSON.parse(
-                jsonText
+                clean.substring(
+                    start,
+                    end + 1
+                )
             );
 
         }catch(e){}
@@ -1206,13 +1128,10 @@ function parseAIJson(text){
 
 
 /* =========================================================
-   DISPLAY
+   DISPLAY RESULTS
 ========================================================= */
 
-function displayResults(
-    data,
-    modelText
-){
+function displayResults(data){
 
     empty.style.display =
         "none";
@@ -1227,6 +1146,7 @@ function displayResults(
     signList.innerHTML =
         "";
 
+
     rawJson.textContent =
         JSON.stringify(
             data,
@@ -1237,14 +1157,13 @@ function displayResults(
 
     const signs =
         Array.isArray(data.signs)
-            ? data.signs
-            : [];
+        ? data.signs
+        : [];
 
 
-    if(signs.length === 0){
+    if(!signs.length){
 
         signList.innerHTML = `
-
             <div class="sign">
 
                 <div class="signName">
@@ -1254,13 +1173,13 @@ function displayResults(
                 <div class="details">
 
                     <div class="detail">
-                        No clearly visible sign was identified.
+                        No clearly visible traffic sign
+                        was identified.
                     </div>
 
                 </div>
 
             </div>
-
         `;
 
         speedResult.style.display =
@@ -1270,109 +1189,106 @@ function displayResults(
     }
 
 
-    signs.forEach(
-        function(sign){
+    signs.forEach(function(sign){
 
-            const confidence =
-                Number(sign.confidence);
-
-
-            const confidenceText =
-                Number.isFinite(
-                    confidence
-                )
-                ? Math.round(
-                    confidence * 100
-                ) + "%"
-                : "N/A";
-
-
-            const card =
-                document.createElement(
-                    "div"
-                );
-
-            card.className =
-                "sign";
-
-
-            card.innerHTML = `
-
-                <div class="signTop">
-
-                    <div class="signName">
-                        🚦 ${escapeHTML(
-                            formatType(
-                                sign.type
-                            )
-                        )}
-                    </div>
-
-                    <div class="confidence">
-                        ${confidenceText}
-                    </div>
-
-                </div>
-
-                <div class="details">
-
-                    ${
-                        sign.text
-                        ?
-                        `
-                        <div class="detail">
-                            🏷️ ${escapeHTML(
-                                sign.text
-                            )}
-                        </div>
-                        `
-                        :
-                        ""
-                    }
-
-                    ${
-                        sign.speed_kmh !== null &&
-                        sign.speed_kmh !== undefined
-                        ?
-                        `
-                        <div class="detail">
-                            🚗 Limit:
-                            ${escapeHTML(
-                                String(
-                                    sign.speed_kmh
-                                )
-                            )}
-                            km/h
-                        </div>
-                        `
-                        :
-                        ""
-                    }
-
-                    ${
-                        sign.position
-                        ?
-                        `
-                        <div class="detail">
-                            📍 ${escapeHTML(
-                                sign.position
-                            )}
-                        </div>
-                        `
-                        :
-                        ""
-                    }
-
-                </div>
-            `;
-
-
-            signList.appendChild(
-                card
+        const confidence =
+            Number(
+                sign.confidence
             );
 
+
+        const confidenceText =
+            Number.isFinite(confidence)
+            ? Math.round(
+                confidence * 100
+              ) + "%"
+            : "N/A";
+
+
+        const card =
+            document.createElement(
+                "div"
+            );
+
+        card.className =
+            "sign";
+
+
+        let details = "";
+
+
+        if(sign.text){
+
+            details += `
+                <div class="detail">
+                    🏷️ ${escapeHTML(
+                        sign.text
+                    )}
+                </div>
+            `;
         }
-    );
+
+
+        if(
+            sign.speed_kmh !== null &&
+            sign.speed_kmh !== undefined
+        ){
+
+            details += `
+                <div class="detail">
+                    🚗 Limit:
+                    ${escapeHTML(
+                        String(
+                            sign.speed_kmh
+                        )
+                    )}
+                    km/h
+                </div>
+            `;
+        }
+
+
+        if(sign.position){
+
+            details += `
+                <div class="detail">
+                    📍 ${escapeHTML(
+                        sign.position
+                    )}
+                </div>
+            `;
+        }
+
+
+        card.innerHTML = `
+
+            <div class="signTop">
+
+                <div class="signName">
+                    🚦 ${escapeHTML(
+                        formatType(
+                            sign.type
+                        )
+                    )}
+                </div>
+
+                <div class="confidence">
+                    ${confidenceText}
+                </div>
+
+            </div>
+
+            <div class="details">
+                ${details}
+            </div>
+        `;
+
+
+        signList.appendChild(
+            card
+        );
+
+    });
 
 
     analyzeSpeed(
@@ -1388,8 +1304,9 @@ function displayResults(
 function analyzeSpeed(signs){
 
     const speedSigns =
-        signs.filter(
-            sign =>
+        signs.filter(function(sign){
+
+            return (
                 sign.speed_kmh !== null &&
                 sign.speed_kmh !== undefined &&
                 Number.isFinite(
@@ -1397,7 +1314,9 @@ function analyzeSpeed(signs){
                         sign.speed_kmh
                     )
                 )
-        );
+            );
+
+        });
 
 
     if(!speedSigns.length){
@@ -1409,17 +1328,15 @@ function analyzeSpeed(signs){
     }
 
 
-    const limits =
-        speedSigns.map(
-            sign =>
-                Number(
-                    sign.speed_kmh
-                )
-        );
-
-
     const limit =
-        Math.min(...limits);
+        Math.min(
+            ...speedSigns.map(
+                sign =>
+                    Number(
+                        sign.speed_kmh
+                    )
+            )
+        );
 
 
     const vehicleMs =
@@ -1454,7 +1371,9 @@ function analyzeSpeed(signs){
             <div class="speedInfo">
 
                 Detected limit:
-                <strong>${limit} km/h</strong>
+                <strong>
+                    ${limit} km/h
+                </strong>
 
                 <br>
 
@@ -1480,7 +1399,9 @@ function analyzeSpeed(signs){
             <div class="speedInfo">
 
                 Detected limit:
-                <strong>${limit} km/h</strong>
+                <strong>
+                    ${limit} km/h
+                </strong>
 
                 <br>
 
@@ -1513,7 +1434,9 @@ function analyzeSpeed(signs){
             <div class="speedInfo">
 
                 Detected limit:
-                <strong>${limit} km/h</strong>
+                <strong>
+                    ${limit} km/h
+                </strong>
 
                 <br>
 
@@ -1536,7 +1459,7 @@ function analyzeSpeed(signs){
 
 
 /* =========================================================
-   FORMAT TYPE
+   HELPERS
 ========================================================= */
 
 function formatType(type){
@@ -1549,15 +1472,10 @@ function formatType(type){
         .replace(/_/g," ")
         .replace(
             /\b\w/g,
-            char =>
-                char.toUpperCase()
+            c => c.toUpperCase()
         );
 }
 
-
-/* =========================================================
-   ESCAPE HTML
-========================================================= */
 
 function escapeHTML(value){
 
@@ -1653,7 +1571,9 @@ function showError(message){
 
         <div class="error">
 
-            <strong>Detection failed</strong>
+            <strong>
+                ❌ Detection failed
+            </strong>
 
             <br><br>
 
@@ -1661,19 +1581,13 @@ function showError(message){
 
             <br><br>
 
-            Check:
-            <br>
-            • Hugging Face token
-            <br>
-            • Inference permission
-            <br>
-            • Available credits
-            <br>
-            • Internet connection
+            Check your Hugging Face token,
+            Inference Providers permission,
+            available credits and internet connection.
 
         </div>
-
     `;
+
 
     speedResult.style.display =
         "none";
@@ -1703,10 +1617,11 @@ resetBtn.addEventListener(
         uploadContent.style.display =
             "block";
 
-        clearResults();
-
         detectBtn.disabled =
             true;
+
+        clearResults();
+
     }
 );
 
