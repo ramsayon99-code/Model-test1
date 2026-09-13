@@ -4,101 +4,102 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 
-<title>Speed Limit AI V2</title>
+<title>Speed Limit AI V4</title>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
-
 *{
     box-sizing:border-box;
 }
 
 body{
     margin:0;
-    padding:20px;
+    padding:18px;
     background:#101010;
     color:white;
     font-family:Arial,sans-serif;
 }
 
 .container{
-    max-width:600px;
+    max-width:650px;
     margin:auto;
 }
 
 .card{
-    background:#1c1c1c;
-    border-radius:18px;
+    background:#1d1d1d;
     padding:20px;
-    margin-bottom:15px;
+    border-radius:20px;
 }
 
 h1{
     text-align:center;
+    margin-top:0;
+}
+
+.status{
+    background:#292929;
+    padding:12px;
+    border-radius:10px;
+    text-align:center;
+    margin-bottom:15px;
 }
 
 label{
     display:block;
     margin-top:15px;
-    margin-bottom:6px;
+    margin-bottom:7px;
     font-weight:bold;
 }
 
-input,button{
+input[type="number"],
+input[type="file"]{
     width:100%;
-    padding:14px;
+    padding:13px;
     border-radius:10px;
     border:none;
-    font-size:16px;
-}
-
-input[type="number"]{
     background:#292929;
     color:white;
 }
 
 button{
+    width:100%;
+    padding:14px;
     margin-top:15px;
+    border:0;
+    border-radius:10px;
     background:#1976d2;
     color:white;
+    font-size:16px;
     font-weight:bold;
-    cursor:pointer;
 }
 
 button:disabled{
     background:#555;
 }
 
-#preview{
+img{
     width:100%;
-    max-height:400px;
+    max-height:420px;
     object-fit:contain;
     margin-top:15px;
     border-radius:12px;
     display:none;
 }
 
-#cropCanvas{
+canvas{
     width:100%;
-    margin-top:15px;
+    margin-top:12px;
     border-radius:12px;
     display:none;
-}
-
-.status{
-    text-align:center;
-    padding:10px;
-    background:#292929;
-    border-radius:10px;
+    background:white;
 }
 
 .result{
-    padding:20px;
+    margin-top:18px;
+    padding:18px;
     border-radius:15px;
-    margin-top:15px;
-    text-align:center;
     background:#292929;
 }
 
@@ -110,15 +111,39 @@ button:disabled{
     background:#8b0000;
 }
 
+.warning{
+    background:#704d00;
+}
+
+.row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,.12);
+}
+
+.value{
+    font-weight:bold;
+}
+
 .big{
     font-size:30px;
     font-weight:bold;
+    text-align:center;
+    margin:10px 0;
 }
 
 .small{
     color:#bbb;
+    font-size:13px;
 }
 
+hr{
+    border:0;
+    border-top:1px solid rgba(255,255,255,.2);
+    margin:15px 0;
+}
 </style>
 </head>
 
@@ -128,7 +153,7 @@ button:disabled{
 
 <div class="card">
 
-<h1>🚗 Speed Limit AI V2</h1>
+<h1>🚗 Speed Limit AI V4</h1>
 
 <div id="modelStatus" class="status">
 ⏳ Loading AI model...
@@ -144,7 +169,7 @@ button:disabled{
     value="20"
 >
 
-<label>🖼️ Upload Speed Limit Sign Image</label>
+<label>🖼️ Upload Speed Limit Sign</label>
 
 <input
     id="imageInput"
@@ -154,16 +179,17 @@ button:disabled{
 
 <img id="preview">
 
-<canvas id="cropCanvas"></canvas>
+<canvas id="signCanvas"></canvas>
 
-<button id="detectButton" onclick="startDetection()">
+<button
+    id="detectButton"
+    onclick="startDetection()"
+>
 🤖 Detect Speed Limit
 </button>
 
 <div id="result" class="result">
-
 Waiting for image...
-
 </div>
 
 </div>
@@ -179,17 +205,7 @@ Waiting for image...
 
 const MODEL_PATH = "./speed_limit_best.onnx";
 
-const IMAGE_SIZE = 640;
-
-/*
-Your model has 9 classes.
-
-IMPORTANT:
-We are NOT using the number from these class names
-as the final speed.
-
-They are only used to identify speed-limit signs.
-*/
+const SIZE = 640;
 
 const CLASS_NAMES = [
     "STOP",
@@ -203,7 +219,7 @@ const CLASS_NAMES = [
     "SPEED LIMIT 80"
 ];
 
-const SPEED_CLASS_IDS = [
+const SPEED_CLASSES = [
     1,2,3,4,5,6,7,8
 ];
 
@@ -218,22 +234,28 @@ async function loadModel(){
 
     try{
 
-        session = await ort.InferenceSession.create(
-            MODEL_PATH,
-            {
-                executionProviders:["wasm"]
-            }
-        );
+        session =
+            await ort.InferenceSession.create(
+                MODEL_PATH,
+                {
+                    executionProviders:["wasm"]
+                }
+            );
 
         document.getElementById(
             "modelStatus"
         ).innerHTML =
             "✅ AI Model Loaded";
 
-        console.log("Input names:",session.inputNames);
-        console.log("Output names:",session.outputNames);
-        console.log("Input metadata:",session.inputMetadata);
-        console.log("Output metadata:",session.outputMetadata);
+        console.log(
+            "INPUT:",
+            session.inputNames
+        );
+
+        console.log(
+            "OUTPUT:",
+            session.outputNames
+        );
 
     }
     catch(error){
@@ -253,26 +275,29 @@ loadModel();
 
 
 /* =====================================================
-   IMAGE PREVIEW
+   PREVIEW
 ===================================================== */
 
 document.getElementById(
     "imageInput"
-).addEventListener("change",function(){
+).addEventListener(
+    "change",
+    function(){
 
-    const file=this.files[0];
+        const file=this.files[0];
 
-    if(!file) return;
+        if(!file) return;
 
-    const url=URL.createObjectURL(file);
+        const img=
+            document.getElementById("preview");
 
-    const img=document.getElementById("preview");
+        img.src=
+            URL.createObjectURL(file);
 
-    img.src=url;
+        img.style.display="block";
 
-    img.style.display="block";
-
-});
+    }
+);
 
 
 /* =====================================================
@@ -281,148 +306,166 @@ document.getElementById(
 
 function loadImage(file){
 
-    return new Promise((resolve,reject)=>{
+    return new Promise(
+        (resolve,reject)=>{
 
-        const img=new Image();
+            const img=new Image();
 
-        img.onload=()=>resolve(img);
+            img.onload=()=>{
+                resolve(img);
+            };
 
-        img.onerror=reject;
+            img.onerror=reject;
 
-        img.src=URL.createObjectURL(file);
+            img.src=
+                URL.createObjectURL(file);
 
-    });
+        }
+    );
 
 }
 
 
 /* =====================================================
-   YOLO IMAGE PREPROCESSING
+   PREPROCESS
 ===================================================== */
 
-function preprocessImage(img){
+function preprocess(img){
 
-    const canvas=document.createElement("canvas");
+    const canvas=
+        document.createElement("canvas");
 
-    canvas.width=IMAGE_SIZE;
-    canvas.height=IMAGE_SIZE;
+    canvas.width=SIZE;
+    canvas.height=SIZE;
 
-    const ctx=canvas.getContext("2d");
+    const ctx=
+        canvas.getContext("2d");
 
     ctx.drawImage(
         img,
         0,
         0,
-        IMAGE_SIZE,
-        IMAGE_SIZE
+        SIZE,
+        SIZE
     );
 
-    const imageData=ctx.getImageData(
-        0,
-        0,
-        IMAGE_SIZE,
-        IMAGE_SIZE
-    );
+    const pixels=
+        ctx.getImageData(
+            0,
+            0,
+            SIZE,
+            SIZE
+        ).data;
 
-    const area=IMAGE_SIZE*IMAGE_SIZE;
+    const area=
+        SIZE*SIZE;
 
-    const data=new Float32Array(
-        3*area
-    );
+    const data=
+        new Float32Array(
+            area*3
+        );
 
     for(let i=0;i<area;i++){
 
-        const r=imageData.data[i*4];
-        const g=imageData.data[i*4+1];
-        const b=imageData.data[i*4+2];
+        data[i]=
+            pixels[i*4]/255;
 
-        data[i]=r/255;
-        data[area+i]=g/255;
-        data[2*area+i]=b/255;
+        data[area+i]=
+            pixels[i*4+1]/255;
+
+        data[area*2+i]=
+            pixels[i*4+2]/255;
 
     }
 
     return new ort.Tensor(
         "float32",
         data,
-        [1,3,IMAGE_SIZE,IMAGE_SIZE]
+        [1,3,SIZE,SIZE]
     );
 
 }
 
 
 /* =====================================================
-   YOLO OUTPUT PARSER
+   PARSE YOLO
 ===================================================== */
 
-function parseYOLOOutput(output){
-
-    const tensor=
-        output[session.outputNames[0]];
+function parseYOLO(tensor){
 
     const data=tensor.data;
     const dims=tensor.dims;
 
-    console.log("YOLO output dimensions:",dims);
+    console.log(
+        "Output dimensions:",
+        dims
+    );
 
-    let candidates=[];
+    const detections=[];
 
     /*
-       YOLO11 commonly returns:
-
-       [1, 4 + classes, predictions]
-
-       For 9 classes:
-
-       [1, 13, 8400]
+       YOLO11:
+       [1,13,8400]
     */
 
     if(
         dims.length===3 &&
-        dims[1]===(4+CLASS_NAMES.length)
+        dims[1]===13
     ){
 
-        const channels=dims[1];
         const predictions=dims[2];
 
-        for(let i=0;i<predictions;i++){
+        for(
+            let i=0;
+            i<predictions;
+            i++
+        ){
 
-            let bestClass=-1;
-            let bestScore=0;
+            let classId=-1;
+            let confidence=0;
 
-            for(let c=0;c<CLASS_NAMES.length;c++){
+            for(
+                let c=0;
+                c<9;
+                c++
+            ){
 
                 const score=
-                    data[(4+c)*predictions+i];
+                    data[
+                        (4+c)*predictions+i
+                    ];
 
-                if(score>bestScore){
+                if(score>confidence){
 
-                    bestScore=score;
-                    bestClass=c;
+                    confidence=score;
+                    classId=c;
 
                 }
 
             }
 
             if(
-                bestClass>=0 &&
-                bestScore>=0.25
+                classId>=0 &&
+                confidence>=0.20
             ){
 
-                const cx=data[i];
-                const cy=data[predictions+i];
-                const w=data[2*predictions+i];
-                const h=data[3*predictions+i];
+                detections.push({
 
-                candidates.push({
+                    classId,
+                    confidence,
 
-                    classId:bestClass,
-                    score:bestScore,
+                    cx:data[i],
+                    cy:data[
+                        predictions+i
+                    ],
 
-                    cx:cx,
-                    cy:cy,
-                    w:w,
-                    h:h
+                    w:data[
+                        predictions*2+i
+                    ],
+
+                    h:data[
+                        predictions*3+i
+                    ]
 
                 });
 
@@ -433,49 +476,59 @@ function parseYOLOOutput(output){
     }
 
     /*
-       Some exported models can return:
-
-       [1, 8400, 13]
+       Alternative:
+       [1,8400,13]
     */
 
     else if(
         dims.length===3 &&
-        dims[2]===(4+CLASS_NAMES.length)
+        dims[2]===13
     ){
 
         const predictions=dims[1];
 
-        for(let i=0;i<predictions;i++){
+        for(
+            let i=0;
+            i<predictions;
+            i++
+        ){
 
-            let bestClass=-1;
-            let bestScore=0;
+            let classId=-1;
+            let confidence=0;
 
-            for(let c=0;c<CLASS_NAMES.length;c++){
+            for(
+                let c=0;
+                c<9;
+                c++
+            ){
 
                 const score=
-                    data[i*(4+CLASS_NAMES.length)+4+c];
+                    data[
+                        i*13+4+c
+                    ];
 
-                if(score>bestScore){
+                if(score>confidence){
 
-                    bestScore=score;
-                    bestClass=c;
+                    confidence=score;
+                    classId=c;
 
                 }
 
             }
 
             if(
-                bestClass>=0 &&
-                bestScore>=0.25
+                classId>=0 &&
+                confidence>=0.20
             ){
 
-                candidates.push({
+                detections.push({
 
-                    classId:bestClass,
-                    score:bestScore,
+                    classId,
+                    confidence,
 
                     cx:data[i*13],
                     cy:data[i*13+1],
+
                     w:data[i*13+2],
                     h:data[i*13+3]
 
@@ -487,7 +540,7 @@ function parseYOLOOutput(output){
 
     }
 
-    return candidates;
+    return detections;
 
 }
 
@@ -496,155 +549,205 @@ function parseYOLOOutput(output){
    IOU
 ===================================================== */
 
-function calculateIoU(a,b){
+function iou(a,b){
 
-    const ax1=a.cx-a.w/2;
-    const ay1=a.cy-a.h/2;
-    const ax2=a.cx+a.w/2;
-    const ay2=a.cy+a.h/2;
+    const ax1=
+        a.cx-a.w/2;
 
-    const bx1=b.cx-b.w/2;
-    const by1=b.cy-b.h/2;
-    const bx2=b.cx+b.w/2;
-    const by2=b.cy+b.h/2;
+    const ay1=
+        a.cy-a.h/2;
 
-    const x1=Math.max(ax1,bx1);
-    const y1=Math.max(ay1,by1);
-    const x2=Math.min(ax2,bx2);
-    const y2=Math.min(ay2,by2);
+    const ax2=
+        a.cx+a.w/2;
 
-    const width=Math.max(0,x2-x1);
-    const height=Math.max(0,y2-y1);
+    const ay2=
+        a.cy+a.h/2;
 
-    const intersection=width*height;
 
-    const areaA=a.w*a.h;
-    const areaB=b.w*b.h;
+    const bx1=
+        b.cx-b.w/2;
 
-    const union=
-        areaA+areaB-intersection;
+    const by1=
+        b.cy-b.h/2;
 
-    if(union<=0) return 0;
+    const bx2=
+        b.cx+b.w/2;
 
-    return intersection/union;
+    const by2=
+        b.cy+b.h/2;
+
+
+    const x1=
+        Math.max(ax1,bx1);
+
+    const y1=
+        Math.max(ay1,by1);
+
+    const x2=
+        Math.min(ax2,bx2);
+
+    const y2=
+        Math.min(ay2,by2);
+
+
+    const width=
+        Math.max(0,x2-x1);
+
+    const height=
+        Math.max(0,y2-y1);
+
+    const intersection=
+        width*height;
+
+
+    const areaA=
+        a.w*a.h;
+
+    const areaB=
+        b.w*b.h;
+
+
+    return intersection/
+        (
+            areaA+
+            areaB-
+            intersection
+        );
 
 }
 
 
 /* =====================================================
-   SIMPLE NMS
+   NMS
 ===================================================== */
 
-function NMS(boxes){
+function nms(boxes){
 
     boxes.sort(
-        (a,b)=>b.score-a.score
+        (a,b)=>
+            b.confidence-
+            a.confidence
     );
 
-    const selected=[];
+    const result=[];
 
     while(boxes.length){
 
-        const current=boxes.shift();
+        const best=
+            boxes.shift();
 
-        selected.push(current);
+        result.push(best);
 
-        boxes=boxes.filter(
-            box=>calculateIoU(
-                current,
-                box
-            )<0.45
-        );
+        boxes=
+            boxes.filter(
+                box=>
+                    iou(best,box)<0.40
+            );
 
     }
 
-    return selected;
+    return result;
 
 }
 
 
 /* =====================================================
-   CROP DETECTED SIGN
+   CROP SIGN
 ===================================================== */
 
-function cropDetectedSign(
+function cropSign(
     img,
     detection
 ){
 
     const canvas=
         document.getElementById(
-            "cropCanvas"
+            "signCanvas"
         );
 
     /*
-       YOLO coordinates are based on 640x640.
-       Convert them back to original image.
+       Detection coordinates are from
+       640x640 resized image.
     */
-
-    const scaleX=
-        img.width/IMAGE_SIZE;
-
-    const scaleY=
-        img.height/IMAGE_SIZE;
 
     let x=
-        (detection.cx-detection.w/2)
-        *scaleX;
+        (
+            detection.cx-
+            detection.w/2
+        ) / SIZE * img.width;
 
     let y=
-        (detection.cy-detection.h/2)
-        *scaleY;
+        (
+            detection.cy-
+            detection.h/2
+        ) / SIZE * img.height;
 
     let w=
-        detection.w*scaleX;
+        detection.w/
+        SIZE*
+        img.width;
 
     let h=
-        detection.h*scaleY;
+        detection.h/
+        SIZE*
+        img.height;
 
 
     /*
-       Add padding around sign.
+       Large padding helps OCR.
     */
 
-    const paddingX=w*0.20;
-    const paddingY=h*0.20;
+    const px=w*0.35;
+    const py=h*0.35;
 
-    x-=paddingX;
-    y-=paddingY;
+    x-=px;
+    y-=py;
 
-    w+=paddingX*2;
-    h+=paddingY*2;
+    w+=px*2;
+    h+=py*2;
 
-
-    /*
-       Keep inside image.
-    */
 
     x=Math.max(0,x);
     y=Math.max(0,y);
 
-    w=Math.min(w,img.width-x);
-    h=Math.min(h,img.height-y);
+    w=Math.min(
+        w,
+        img.width-x
+    );
+
+    h=Math.min(
+        h,
+        img.height-y
+    );
 
 
     /*
-       Bigger OCR image.
+       At least 4x enlargement.
     */
 
-    const scale=3;
+    const scale=4;
 
-    canvas.width=Math.max(
-        1,
-        Math.round(w*scale)
-    );
+    canvas.width=
+        Math.max(
+            200,
+            Math.round(w*scale)
+        );
 
-    canvas.height=Math.max(
-        1,
-        Math.round(h*scale)
-    );
+    canvas.height=
+        Math.max(
+            200,
+            Math.round(h*scale)
+        );
 
-    const ctx=canvas.getContext("2d");
+
+    const ctx=
+        canvas.getContext("2d");
+
+    ctx.imageSmoothingEnabled=true;
+
+    ctx.imageSmoothingQuality=
+        "high";
+
 
     ctx.drawImage(
         img,
@@ -654,6 +757,7 @@ function cropDetectedSign(
         canvas.height
     );
 
+
     canvas.style.display="block";
 
     return canvas;
@@ -662,94 +766,300 @@ function cropDetectedSign(
 
 
 /* =====================================================
-   OCR
+   CREATE OCR VERSION
 ===================================================== */
 
-async function readSpeedWithOCR(canvas){
+function makeOCRCanvas(
+    source,
+    type
+){
 
-    document.getElementById(
-        "result"
-    ).innerHTML=
-        "🔎 Reading number from sign...";
+    const canvas=
+        document.createElement("canvas");
+
+    canvas.width=source.width;
+    canvas.height=source.height;
+
+    const ctx=
+        canvas.getContext("2d");
+
+    ctx.drawImage(
+        source,
+        0,
+        0
+    );
+
+    const image=
+        ctx.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+    const p=image.data;
 
 
-    /*
-       OCR only needs digits.
+    for(
+        let i=0;
+        i<p.length;
+        i+=4
+    ){
 
-       This makes OCR more focused.
-    */
+        const r=p[i];
+        const g=p[i+1];
+        const b=p[i+2];
+
+
+        /*
+           Grayscale
+        */
+
+        let gray=
+            0.299*r+
+            0.587*g+
+            0.114*b;
+
+
+        if(type==="gray"){
+
+            p[i]=gray;
+            p[i+1]=gray;
+            p[i+2]=gray;
+
+        }
+
+
+        /*
+           Strong threshold
+        */
+
+        else if(
+            type==="threshold"
+        ){
+
+            const value=
+                gray>145
+                ?255
+                :0;
+
+            p[i]=value;
+            p[i+1]=value;
+            p[i+2]=value;
+
+        }
+
+
+        /*
+           Inverted threshold
+        */
+
+        else if(
+            type==="invert"
+        ){
+
+            const value=
+                gray>145
+                ?0
+                :255;
+
+            p[i]=value;
+            p[i+1]=value;
+            p[i+2]=value;
+
+        }
+
+    }
+
+
+    ctx.putImageData(
+        image,
+        0,
+        0
+    );
+
+    return canvas;
+
+}
+
+
+/* =====================================================
+   OCR ONE VERSION
+===================================================== */
+
+async function OCRVersion(
+    canvas,
+    psm
+){
+
+    try{
+
+        const result=
+            await Tesseract.recognize(
+                canvas,
+                "eng",
+                {
+
+                    tessedit_char_whitelist:
+                        "0123456789",
+
+                    tessedit_pageseg_mode:
+                        String(psm)
+
+                }
+            );
+
+
+        const raw=
+            result.data.text || "";
+
+
+        console.log(
+            "OCR:",
+            raw
+        );
+
+
+        /*
+           Find numbers.
+        */
+
+        const numbers=
+            raw.match(/\d+/g) || [];
+
+
+        return numbers
+            .map(Number)
+            .filter(
+                n=>
+                    n>=1 &&
+                    n<=300
+            );
+
+    }
+    catch(error){
+
+        console.error(
+            "OCR error:",
+            error
+        );
+
+        return [];
+
+    }
+
+}
+
+
+/* =====================================================
+   OCR MULTIPLE METHODS
+===================================================== */
+
+async function readSpeed(
+    signCanvas
+){
 
     const result=
-        await Tesseract.recognize(
-            canvas,
-            "eng",
-            {
-                logger:m=>{
+        document.getElementById(
+            "result"
+        );
 
-                    if(
-                        m.status==="recognizing text"
-                    ){
 
-                        const percent=
-                            Math.round(
-                                m.progress*100
-                            );
+    const versions=[
+        {
+            name:"Original",
+            canvas:signCanvas
+        },
+        {
+            name:"Grayscale",
+            canvas:
+                makeOCRCanvas(
+                    signCanvas,
+                    "gray"
+                )
+        },
+        {
+            name:"Threshold",
+            canvas:
+                makeOCRCanvas(
+                    signCanvas,
+                    "threshold"
+                )
+        },
+        {
+            name:"Inverted",
+            canvas:
+                makeOCRCanvas(
+                    signCanvas,
+                    "invert"
+                )
+        }
+    ];
 
-                        document.getElementById(
-                            "result"
-                        ).innerHTML=
-                            `🔎 Reading sign... ${percent}%`;
 
-                    }
+    const found=[];
 
-                },
 
-                tessedit_char_whitelist:
-                    "0123456789"
+    for(
+        let i=0;
+        i<versions.length;
+        i++
+    ){
+
+        result.innerHTML=
+            `🔎 OCR reading... ${
+                i+1
+            }/${versions.length}<br><br>${
+                versions[i].name
+            }`;
+
+
+        /*
+           PSM 7 = single line
+           PSM 8 = single word
+           PSM 10 = single character
+        */
+
+        for(
+            const psm of [7,8,10]
+        ){
+
+            const numbers=
+                await OCRVersion(
+                    versions[i].canvas,
+                    psm
+                );
+
+
+            for(
+                const number of numbers
+            ){
+
+                found.push({
+
+                    number:number,
+
+                    method:
+                        versions[i].name,
+
+                    psm:psm
+
+                });
+
             }
-        );
 
+        }
 
-    const text=
-        result.data.text
-        .replace(/\D/g," ")
-        .trim();
+    }
+
 
     console.log(
-        "OCR raw text:",
-        result.data.text
-    );
-
-    console.log(
-        "OCR numbers:",
-        text
+        "ALL OCR RESULTS:",
+        found
     );
 
 
-    /*
-       Extract all numbers.
-    */
-
-    const numbers=
-        text.match(/\d+/g) || [];
-
-
-    /*
-       Speed limits usually aren't tiny
-       random numbers.
-
-       Keep 1-300.
-    */
-
-    const validNumbers=
-        numbers
-        .map(Number)
-        .filter(
-            n=>n>=1 && n<=300
-        );
-
-
-    if(validNumbers.length===0){
+    if(found.length===0){
 
         return null;
 
@@ -757,21 +1067,61 @@ async function readSpeedWithOCR(canvas){
 
 
     /*
-       If OCR sees multiple numbers,
-       choose the largest reasonable speed.
+       Count how many times each
+       number was detected.
     */
 
-    validNumbers.sort(
-        (a,b)=>b-a
+    const counts={};
+
+    for(
+        const item of found
+    ){
+
+        counts[item.number]=
+            (counts[item.number]||0)+1;
+
+    }
+
+
+    /*
+       Highest frequency first.
+       Confidence count breaks ties.
+    */
+
+    const sorted=
+        Object.entries(counts)
+        .sort(
+            (a,b)=>
+                b[1]-a[1]
+        );
+
+
+    const bestNumber=
+        Number(sorted[0][0]);
+
+
+    console.log(
+        "OCR FINAL:",
+        bestNumber,
+        counts
     );
 
-    return validNumbers[0];
+
+    return {
+
+        speed:bestNumber,
+
+        counts:counts,
+
+        rawResults:found
+
+    };
 
 }
 
 
 /* =====================================================
-   MAIN DETECTION
+   MAIN
 ===================================================== */
 
 async function startDetection(){
@@ -781,6 +1131,7 @@ async function startDetection(){
             "imageInput"
         ).files[0];
 
+
     const carSpeed=
         Number(
             document.getElementById(
@@ -788,10 +1139,12 @@ async function startDetection(){
             ).value
         );
 
+
     const result=
         document.getElementById(
             "result"
         );
+
 
     const button=
         document.getElementById(
@@ -812,7 +1165,7 @@ async function startDetection(){
     if(!file){
 
         result.innerHTML=
-            "⚠️ Upload a sign image first.";
+            "⚠️ Upload a speed-limit sign image.";
 
         return;
 
@@ -824,7 +1177,7 @@ async function startDetection(){
     result.className="result";
 
     result.innerHTML=
-        "🤖 Detecting speed-limit sign...";
+        "🤖 AI detecting sign...";
 
 
     try{
@@ -837,41 +1190,41 @@ async function startDetection(){
            YOLO
         */
 
-        const tensor=
-            preprocessImage(img);
-
-
-        const inputName=
-            session.inputNames[0];
+        const input=
+            preprocess(img);
 
 
         const output=
             await session.run({
 
-                [inputName]:tensor
+                [session.inputNames[0]]:
+                    input
 
             });
 
 
         let detections=
-            parseYOLOOutput(output);
+            parseYOLO(
+                output[
+                    session.outputNames[0]
+                ]
+            );
 
 
         console.log(
-            "All detections:",
+            "Raw detections:",
             detections
         );
 
 
         /*
            Only speed-limit classes.
-           STOP is removed.
         */
 
         detections=
             detections.filter(
                 d=>
-                    SPEED_CLASS_IDS.includes(
+                    SPEED_CLASSES.includes(
                         d.classId
                     )
             );
@@ -894,25 +1247,45 @@ async function startDetection(){
         */
 
         detections=
-            NMS(detections);
+            nms(detections);
 
 
         /*
-           Highest confidence speed sign.
+           Highest confidence
         */
 
         detections.sort(
-            (a,b)=>b.score-a.score
+            (a,b)=>
+                b.confidence-
+                a.confidence
         );
 
 
-        const bestDetection=
+        const best=
             detections[0];
 
 
+        const modelClass=
+            CLASS_NAMES[
+                best.classId
+            ];
+
+
+        const modelSpeed=
+            extractNumber(
+                modelClass
+            );
+
+
+        const modelConfidence=
+            (
+                best.confidence*100
+            ).toFixed(2);
+
+
         console.log(
-            "Best sign:",
-            bestDetection
+            "MODEL CLASS:",
+            modelClass
         );
 
 
@@ -920,10 +1293,10 @@ async function startDetection(){
            Crop sign
         */
 
-        const crop=
-            cropDetectedSign(
+        const signCanvas=
+            cropSign(
                 img,
-                bestDetection
+                best
             );
 
 
@@ -931,28 +1304,46 @@ async function startDetection(){
            OCR
         */
 
-        const detectedSpeed=
-            await readSpeedWithOCR(
-                crop
+        const OCR=
+            await readSpeed(
+                signCanvas
             );
 
 
-        if(detectedSpeed===null){
+        /*
+           OCR failed
+        */
+
+        if(!OCR){
 
             result.className=
-                "result";
+                "result warning";
 
             result.innerHTML=`
 
-                <h2>⚠️ Sign detected</h2>
+                <h2>⚠️ OCR Failed</h2>
+
+                <div class="row">
+                    <span>🤖 Model Prediction</span>
+                    <span class="value">
+                        ${modelClass}
+                    </span>
+                </div>
+
+                <div class="row">
+                    <span>🎯 Model Confidence</span>
+                    <span class="value">
+                        ${modelConfidence}%
+                    </span>
+                </div>
 
                 <p>
-                🤖 AI found a speed-limit sign,
-                but OCR could not read the number.
+                🔎 OCR number could not be read.
                 </p>
 
                 <p class="small">
-                Try a clearer / closer image.
+                Try a closer, sharper image
+                where the complete sign is visible.
                 </p>
 
             `;
@@ -964,57 +1355,80 @@ async function startDetection(){
         }
 
 
+        const OCRSpeed=
+            OCR.speed;
+
+
         /*
-           COMPARE
+           FINAL SPEED = OCR
         */
 
         const difference=
-            carSpeed-detectedSpeed;
+            carSpeed-OCRSpeed;
 
 
-        const confidence=
-            (bestDetection.score*100)
-            .toFixed(2);
+        /*
+           Compare
+        */
 
-
-        if(carSpeed>detectedSpeed){
+        if(carSpeed>OCRSpeed){
 
             result.className=
                 "result danger";
 
             result.innerHTML=`
 
-                <div>🚨</div>
+                <h2>🚨 OVER SPEED</h2>
 
-                <h2>OVER SPEED</h2>
-
-                <p>🚦 Detected Sign</p>
-
-                <div class="big">
-                    ${detectedSpeed} km/h
+                <div class="row">
+                    <span>🤖 Model Prediction</span>
+                    <span class="value">
+                        ${modelClass}
+                    </span>
                 </div>
 
-                <p>🚗 Your Car Speed</p>
+                <div class="row">
+                    <span>🎯 Model Confidence</span>
+                    <span class="value">
+                        ${modelConfidence}%
+                    </span>
+                </div>
+
+                <div class="row">
+                    <span>🔎 OCR Reading</span>
+                    <span class="value">
+                        ${OCRSpeed} km/h
+                    </span>
+                </div>
+
+                <hr>
+
+                <div>
+                    🚗 Your Car Speed
+                </div>
 
                 <div class="big">
                     ${carSpeed} km/h
                 </div>
 
+                <div>
+                    🚦 Final Speed Limit
+                </div>
+
+                <div class="big">
+                    ${OCRSpeed} km/h
+                </div>
+
                 <hr>
 
-                <p>
-                    ⚠️ You are
-                    <b>${difference} km/h</b>
-                    over the limit.
-                </p>
+                <h3>
+                    ⚠️ ${difference} km/h
+                    over the limit
+                </h3>
 
                 <p class="small">
-                    YOLO confidence:
-                    ${confidence}%
-                </p>
-
-                <p class="small">
-                    🔎 Speed read using OCR
+                    Final comparison is based
+                    on OCR reading.
                 </p>
 
             `;
@@ -1028,52 +1442,74 @@ async function startDetection(){
 
             result.innerHTML=`
 
-                <div>✅</div>
+                <h2>✅ SPEED OK</h2>
 
-                <h2>SPEED OK</h2>
-
-                <p>🚦 Detected Sign</p>
-
-                <div class="big">
-                    ${detectedSpeed} km/h
+                <div class="row">
+                    <span>🤖 Model Prediction</span>
+                    <span class="value">
+                        ${modelClass}
+                    </span>
                 </div>
 
-                <p>🚗 Your Car Speed</p>
+                <div class="row">
+                    <span>🎯 Model Confidence</span>
+                    <span class="value">
+                        ${modelConfidence}%
+                    </span>
+                </div>
+
+                <div class="row">
+                    <span>🔎 OCR Reading</span>
+                    <span class="value">
+                        ${OCRSpeed} km/h
+                    </span>
+                </div>
+
+                <hr>
+
+                <div>
+                    🚗 Your Car Speed
+                </div>
 
                 <div class="big">
                     ${carSpeed} km/h
                 </div>
 
+                <div>
+                    🚦 Final Speed Limit
+                </div>
+
+                <div class="big">
+                    ${OCRSpeed} km/h
+                </div>
+
                 <hr>
 
-                <p>
-                    👍 You are within
-                    the speed limit.
-                </p>
+                <h3>
+                    👍 Within speed limit
+                </h3>
 
                 <p class="small">
-                    YOLO confidence:
-                    ${confidence}%
-                </p>
-
-                <p class="small">
-                    🔎 Speed read using OCR
+                    Final comparison is based
+                    on OCR reading.
                 </p>
 
             `;
 
         }
 
+
     }
     catch(error){
 
         console.error(error);
 
-        result.className="result";
+        result.className=
+            "result warning";
 
         result.innerHTML=`
 
-            ❌ Error
+            ❌ Detection Error
 
             <br><br>
 
@@ -1090,8 +1526,23 @@ async function startDetection(){
 
 
 /* =====================================================
-   DONE
+   EXTRACT NUMBER FROM MODEL CLASS
 ===================================================== */
+
+function extractNumber(text){
+
+    const match=
+        text.match(/\d+/);
+
+    if(!match){
+
+        return null;
+
+    }
+
+    return Number(match[0]);
+
+}
 
 </script>
 
