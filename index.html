@@ -2,1084 +2,1060 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>DriveGuard AI — Speed Sign Detection</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<title>AI Traffic Sign Detection</title>
 
 <style>
-*{
-  box-sizing:border-box;
-  margin:0;
-  padding:0;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-body{
-  min-height:100vh;
-  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:
-    radial-gradient(circle at 20% 10%,#24365f 0,transparent 32%),
-    radial-gradient(circle at 90% 80%,#172c4b 0,transparent 35%),
-    #070b12;
-  color:#fff;
-  padding:22px;
+:root {
+    --bg: #070b12;
+    --card: rgba(18, 25, 38, 0.88);
+    --border: rgba(255,255,255,0.09);
+    --text: #f5f7fb;
+    --muted: #8993a5;
+    --accent: #5eead4;
+    --accent2: #60a5fa;
+    --danger: #fb7185;
+    --warning: #fbbf24;
+    --success: #4ade80;
 }
 
-.app{
-  max-width:1050px;
-  margin:auto;
+body {
+    min-height: 100vh;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont,
+                 "Segoe UI", sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 10% 10%, rgba(96,165,250,.15), transparent 28%),
+        radial-gradient(circle at 90% 20%, rgba(94,234,212,.10), transparent 25%),
+        var(--bg);
 }
 
-.header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:22px;
+/* ---------- HEADER ---------- */
+
+header {
+    width: 100%;
+    padding: 22px 18px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(16px);
+    background: rgba(7,11,18,.72);
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
-.logo{
-  display:flex;
-  align-items:center;
-  gap:12px;
+.header-inner {
+    max-width: 1050px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
 }
 
-.logoIcon{
-  width:46px;
-  height:46px;
-  border-radius:14px;
-  display:grid;
-  place-items:center;
-  background:linear-gradient(135deg,#ffffff,#9fb9ff);
-  color:#08101d;
-  font-size:22px;
-  font-weight:900;
-  box-shadow:0 8px 30px #0008;
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 11px;
 }
 
-.logo h1{
-  font-size:20px;
+.logo-icon {
+    width: 43px;
+    height: 43px;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    background: linear-gradient(135deg, #5eead4, #60a5fa);
+    color: #071018;
+    font-weight: 900;
 }
 
-.logo p{
-  color:#8793a8;
-  font-size:12px;
-  margin-top:2px;
+.logo-text h1 {
+    font-size: 18px;
+    letter-spacing: -.3px;
 }
 
-.status{
-  padding:9px 14px;
-  border:1px solid #ffffff18;
-  background:#ffffff0b;
-  border-radius:999px;
-  color:#aab5c8;
-  font-size:12px;
+.logo-text p {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
 }
 
-.card{
-  background:linear-gradient(145deg,#111925dd,#0c121bdd);
-  border:1px solid #ffffff12;
-  border-radius:24px;
-  box-shadow:0 20px 70px #0008;
-  backdrop-filter:blur(18px);
-  padding:22px;
-  margin-bottom:18px;
+.status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--muted);
 }
 
-.hero{
-  text-align:center;
-  padding:30px 20px;
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 12px var(--success);
 }
 
-.hero h2{
-  font-size:clamp(27px,5vw,48px);
-  letter-spacing:-1.5px;
+/* ---------- MAIN ---------- */
+
+main {
+    width: 100%;
+    max-width: 1050px;
+    margin: auto;
+    padding: 35px 18px 60px;
 }
 
-.hero h2 span{
-  background:linear-gradient(90deg,#fff,#8eafff);
-  -webkit-background-clip:text;
-  color:transparent;
+.hero {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
-.hero p{
-  color:#8e9bb0;
-  margin-top:10px;
+.hero h2 {
+    font-size: clamp(28px, 6vw, 48px);
+    line-height: 1.05;
+    letter-spacing: -1.5px;
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:18px;
+.hero h2 span {
+    background: linear-gradient(90deg, #5eead4, #60a5fa);
+    -webkit-background-clip: text;
+    color: transparent;
 }
 
-@media(max-width:750px){
-  .grid{grid-template-columns:1fr}
+.hero p {
+    max-width: 650px;
+    margin: 13px auto 0;
+    color: var(--muted);
+    line-height: 1.6;
+    font-size: 14px;
 }
 
-.sectionTitle{
-  font-size:13px;
-  text-transform:uppercase;
-  letter-spacing:1.5px;
-  color:#8491a7;
-  margin-bottom:15px;
+/* ---------- GRID ---------- */
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
 }
 
-.speedBox{
-  text-align:center;
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 20px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.22);
 }
 
-.speedValue{
-  font-size:56px;
-  font-weight:800;
-  letter-spacing:-2px;
+.card-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
-.speedUnit{
-  color:#8d99aa;
-  font-size:14px;
+.card-title h3 {
+    font-size: 16px;
 }
 
-input[type=range]{
-  width:100%;
-  margin:25px 0 10px;
-  accent-color:#87a7ff;
-  cursor:pointer;
+.badge {
+    font-size: 10px;
+    padding: 5px 9px;
+    border-radius: 20px;
+    background: rgba(94,234,212,.10);
+    color: var(--accent);
+    border: 1px solid rgba(94,234,212,.18);
 }
 
-.rangeLabels{
-  display:flex;
-  justify-content:space-between;
-  color:#68758a;
-  font-size:11px;
+/* ---------- UPLOAD ---------- */
+
+.upload-box {
+    min-height: 300px;
+    border: 1px dashed rgba(255,255,255,.18);
+    border-radius: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: .2s;
+    position: relative;
 }
 
-.upload{
-  border:1px dashed #ffffff25;
-  border-radius:18px;
-  padding:25px;
-  text-align:center;
-  cursor:pointer;
-  background:#ffffff05;
-  transition:.2s;
+.upload-box:hover {
+    border-color: var(--accent);
+    background: rgba(94,234,212,.025);
 }
 
-.upload:hover{
-  background:#ffffff0a;
-  border-color:#8aa8ff66;
+.upload-content {
+    padding: 25px;
 }
 
-.uploadIcon{
-  font-size:35px;
-  margin-bottom:8px;
+.upload-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    margin: 0 auto 15px;
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+    background: rgba(96,165,250,.10);
+    border: 1px solid rgba(96,165,250,.18);
 }
 
-.upload strong{
-  display:block;
+.upload-content h4 {
+    font-size: 16px;
 }
 
-.upload small{
-  display:block;
-  color:#738097;
-  margin-top:6px;
+.upload-content p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 7px;
 }
 
-#file{
-  display:none;
+#imageInput {
+    display: none;
 }
 
-.preview{
-  width:100%;
-  max-height:420px;
-  object-fit:contain;
-  border-radius:18px;
-  margin-top:15px;
-  display:none;
-  background:#05080d;
+#preview {
+    display: none;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    max-height: 400px;
 }
 
-.btnRow{
-  display:flex;
-  gap:10px;
-  margin-top:15px;
+/* ---------- CONTROLS ---------- */
+
+.controls {
+    margin-top: 15px;
 }
 
-button{
-  flex:1;
-  border:0;
-  border-radius:14px;
-  padding:14px;
-  font-size:14px;
-  font-weight:700;
-  cursor:pointer;
-  transition:.2s;
+label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 7px;
 }
 
-.primary{
-  background:linear-gradient(135deg,#91adff,#647fd7);
-  color:#07101e;
+input[type="password"],
+input[type="number"] {
+    width: 100%;
+    background: rgba(0,0,0,.25);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    outline: none;
 }
 
-.secondary{
-  background:#ffffff0b;
-  color:white;
-  border:1px solid #ffffff12;
+input:focus {
+    border-color: var(--accent2);
 }
 
-button:active{
-  transform:scale(.98);
+.speed-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
-.result{
-  display:none;
-  text-align:center;
+input[type="range"] {
+    flex: 1;
+    accent-color: var(--accent);
 }
 
-.signCircle{
-  width:150px;
-  height:150px;
-  border-radius:50%;
-  margin:12px auto 18px;
-  display:grid;
-  place-items:center;
-  background:#f4f4f4;
-  color:#161616;
-  border:10px solid #d92727;
-  box-shadow:0 15px 50px #0009;
+.speed-value {
+    min-width: 75px;
+    text-align: center;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.06);
+    font-size: 13px;
 }
 
-.signCircle span{
-  font-size:38px;
-  font-weight:900;
+/* ---------- BUTTON ---------- */
+
+button {
+    width: 100%;
+    border: none;
+    border-radius: 13px;
+    padding: 14px;
+    margin-top: 15px;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 14px;
+    color: #071018;
+    background: linear-gradient(90deg, #5eead4, #60a5fa);
+    transition: .2s;
 }
 
-.signName{
-  font-size:23px;
-  font-weight:800;
+button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.08);
 }
 
-.conf{
-  color:#7f8ba0;
-  font-size:12px;
-  margin-top:5px;
+button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    transform: none;
 }
 
-.comparison{
-  margin-top:20px;
-  padding:18px;
-  border-radius:17px;
-  background:#ffffff06;
-  border:1px solid #ffffff0d;
+.secondary {
+    background: rgba(255,255,255,.07);
+    color: white;
+    border: 1px solid var(--border);
 }
 
-.compareLine{
-  display:flex;
-  justify-content:space-between;
-  margin:9px 0;
-  color:#aab4c4;
+/* ---------- RESULTS ---------- */
+
+.result-empty {
+    min-height: 300px;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: var(--muted);
 }
 
-.compareLine strong{
-  color:#fff;
+.result-empty-icon {
+    font-size: 42px;
+    margin-bottom: 12px;
 }
 
-.safe{
-  color:#6ee7a2 !important;
+.loading {
+    display: none;
+    text-align: center;
+    padding: 55px 20px;
 }
 
-.warning{
-  color:#ff7272 !important;
+.spinner {
+    width: 42px;
+    height: 42px;
+    margin: auto;
+    border: 3px solid rgba(255,255,255,.1);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
 }
 
-.alert{
-  display:none;
-  margin-top:15px;
-  padding:15px;
-  border-radius:15px;
-  font-weight:800;
-  background:#ff303015;
-  border:1px solid #ff5c5c55;
-  color:#ff7c7c;
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.safeBox{
-  display:none;
-  margin-top:15px;
-  padding:15px;
-  border-radius:15px;
-  background:#30ff9410;
-  border:1px solid #4dffad35;
-  color:#72e8a6;
-  font-weight:700;
+.loading p {
+    margin-top: 15px;
+    color: var(--muted);
+    font-size: 13px;
 }
 
-.loading{
-  display:none;
-  text-align:center;
-  color:#94a3ba;
-  padding:15px;
+/* ---------- SIGN CARDS ---------- */
+
+.sign-list {
+    display: grid;
+    gap: 11px;
 }
 
-.spinner{
-  display:inline-block;
-  width:18px;
-  height:18px;
-  border:2px solid #ffffff20;
-  border-top-color:#91adff;
-  border-radius:50%;
-  animation:spin .7s linear infinite;
-  vertical-align:middle;
-  margin-right:8px;
+.sign-card {
+    padding: 14px;
+    border-radius: 15px;
+    background: rgba(255,255,255,.045);
+    border: 1px solid var(--border);
 }
 
-@keyframes spin{
-  to{transform:rotate(360deg)}
+.sign-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
 }
 
-.footer{
-  text-align:center;
-  color:#4f5c70;
-  font-size:11px;
-  padding:12px;
+.sign-name {
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.confidence {
+    font-size: 11px;
+    color: var(--success);
+}
+
+.sign-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 9px;
+}
+
+.detail {
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: 7px;
+    background: rgba(255,255,255,.06);
+    color: var(--muted);
+}
+
+/* ---------- SPEED RESULT ---------- */
+
+.speed-result {
+    margin-top: 15px;
+    padding: 17px;
+    border-radius: 16px;
+    border: 1px solid rgba(96,165,250,.2);
+    background: rgba(96,165,250,.06);
+}
+
+.speed-result.safe {
+    border-color: rgba(74,222,128,.25);
+    background: rgba(74,222,128,.06);
+}
+
+.speed-result.warning {
+    border-color: rgba(251,191,36,.25);
+    background: rgba(251,191,36,.06);
+}
+
+.speed-result.danger {
+    border-color: rgba(251,113,133,.25);
+    background: rgba(251,113,133,.06);
+}
+
+.speed-main {
+    font-size: 24px;
+    font-weight: 900;
+}
+
+.speed-message {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* ---------- RAW JSON ---------- */
+
+.raw-json {
+    margin-top: 15px;
+}
+
+.raw-json summary {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+pre {
+    margin-top: 10px;
+    padding: 13px;
+    background: #03060b;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow-x: auto;
+    color: #b9f6ee;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+/* ---------- FOOTER ---------- */
+
+footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 30px;
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 760px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-inner {
+        align-items: flex-start;
+    }
+
+    .status {
+        display: none;
+    }
+
+    main {
+        padding-top: 25px;
+    }
+
+    .upload-box {
+        min-height: 250px;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<div class="app">
+<header>
+    <div class="header-inner">
 
-  <div class="header">
-    <div class="logo">
-      <div class="logoIcon">AI</div>
-      <div>
-        <h1>DriveGuard AI</h1>
-        <p>Intelligent Speed Sign Detection</p>
-      </div>
-    </div>
+        <div class="logo">
+            <div class="logo-icon">AI</div>
 
-    <div class="status" id="status">● Model Offline</div>
-  </div>
+            <div class="logo-text">
+                <h1>Traffic Sign AI</h1>
+                <p>Intelligent Road Safety System</p>
+            </div>
+        </div>
 
-  <div class="card hero">
-    <h2>Drive <span>Smarter.</span></h2>
-    <p>AI-powered traffic sign recognition and speed monitoring.</p>
-  </div>
-
-  <div class="grid">
-
-    <!-- SPEED -->
-    <div class="card speedBox">
-
-      <div class="sectionTitle">Vehicle Speed</div>
-
-      <div class="speedValue">
-        <span id="speed">0.0</span>
-      </div>
-
-      <div class="speedUnit">meters / second (m/s)</div>
-
-      <input
-        id="speedSlider"
-        type="range"
-        min="0"
-        max="40"
-        step="0.1"
-        value="0"
-      >
-
-      <div class="rangeLabels">
-        <span>0 m/s</span>
-        <span>20 m/s</span>
-        <span>40 m/s</span>
-      </div>
-
-      <div style="margin-top:14px;color:#647187;font-size:12px">
-        ≈ <span id="kmh">0.0</span> km/h
-      </div>
+        <div class="status">
+            <span class="status-dot"></span>
+            AI Detection Ready
+        </div>
 
     </div>
+</header>
 
-    <!-- UPLOAD -->
-    <div class="card">
 
-      <div class="sectionTitle">Traffic Sign Scan</div>
+<main>
 
-      <label class="upload" for="file">
-        <div class="uploadIcon">📷</div>
-        <strong>Select road image</strong>
-        <small>JPG, PNG or WEBP</small>
-      </label>
+    <section class="hero">
 
-      <input id="file" type="file" accept="image/*">
+        <h2>
+            AI Traffic Sign
+            <span>Detection</span>
+        </h2>
 
-      <img id="preview" class="preview">
+        <p>
+            Upload a road image and let an advanced vision-language
+            model identify visible traffic signs and analyze speed limits.
+        </p>
 
-      <div class="btnRow">
-        <button class="primary" id="detectBtn" disabled>
-          Scan Sign
-        </button>
+    </section>
 
-        <button class="secondary" id="cameraBtn">
-          Camera
-        </button>
-      </div>
 
-      <div class="loading" id="loading">
-        <span class="spinner"></span>
-        AI analysing image...
-      </div>
+    <div class="grid">
+
+        <!-- LEFT SIDE -->
+
+        <section class="card">
+
+            <div class="card-title">
+                <h3>1. Upload Road Image</h3>
+                <span class="badge">IMAGE</span>
+            </div>
+
+            <div
+                class="upload-box"
+                id="uploadBox"
+                onclick="document.getElementById('imageInput').click()"
+            >
+
+                <div class="upload-content" id="uploadContent">
+
+                    <div class="upload-icon">
+                        📷
+                    </div>
+
+                    <h4>Select an image</h4>
+
+                    <p>
+                        JPG, PNG or WEBP<br>
+                        Choose a clear road image containing traffic signs
+                    </p>
+
+                </div>
+
+                <img id="preview" alt="Selected road image">
+
+            </div>
+
+            <input
+                type="file"
+                id="imageInput"
+                accept="image/png,image/jpeg,image/webp"
+            >
+
+
+            <div class="controls">
+
+                <label>
+                    Hugging Face API Token
+                </label>
+
+                <input
+                    type="password"
+                    id="apiToken"
+                    placeholder="hf_••••••••••••••••"
+                    autocomplete="off"
+                >
+
+                <label style="margin-top:14px;">
+                    Your Vehicle Speed
+                </label>
+
+                <div class="speed-row">
+
+                    <input
+                        type="range"
+                        id="speedSlider"
+                        min="0"
+                        max="40"
+                        step="0.5"
+                        value="10"
+                    >
+
+                    <div class="speed-value">
+                        <span id="speedMs">10</span> m/s
+                        <br>
+                        <span id="speedKmh">36</span> km/h
+                    </div>
+
+                </div>
+
+
+                <button
+                    id="detectBtn"
+                    disabled
+                    onclick="detectSigns()"
+                >
+                    🔍 Detect Traffic Signs
+                </button>
+
+                <button
+                    class="secondary"
+                    onclick="resetDemo()"
+                >
+                    ↻ Reset Demo
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- RIGHT SIDE -->
+
+        <section class="card">
+
+            <div class="card-title">
+                <h3>2. Detection Results</h3>
+                <span class="badge">AI OUTPUT</span>
+            </div>
+
+
+            <div class="result-empty" id="emptyResult">
+
+                <div>
+                    <div class="result-empty-icon">
+                        🚦
+                    </div>
+
+                    <p>
+                        Upload an image to begin detection.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="loading" id="loading">
+
+                <div class="spinner"></div>
+
+                <p>
+                    AI is analyzing the road image...
+                </p>
+
+            </div>
+
+
+            <div id="results" style="display:none;">
+
+                <div
+                    id="signList"
+                    class="sign-list"
+                ></div>
+
+                <div
+                    id="speedResult"
+                    class="speed-result"
+                    style="display:none;"
+                ></div>
+
+
+                <details class="raw-json">
+
+                    <summary>
+                        View AI JSON response
+                    </summary>
+
+                    <pre id="rawJson"></pre>
+
+                </details>
+
+            </div>
+
+        </section>
 
     </div>
 
-  </div>
 
-  <!-- RESULT -->
-  <div class="card result" id="result">
+    <footer>
+        AI Traffic Sign Detection Demo • Built for Science Fair Presentation
+    </footer>
 
-    <div class="sectionTitle">Detection Result</div>
+</main>
 
-    <div class="signCircle">
-      <span id="signNumber">--</span>
-    </div>
-
-    <div class="signName" id="signName">
-      No sign detected
-    </div>
-
-    <div class="conf">
-      Confidence: <span id="confidence">--</span>
-    </div>
-
-    <div class="comparison">
-
-      <div class="compareLine">
-        <span>Vehicle speed</span>
-        <strong id="vehicleSpeed">--</strong>
-      </div>
-
-      <div class="compareLine">
-        <span>Speed limit</span>
-        <strong id="limitSpeed">--</strong>
-      </div>
-
-      <div class="compareLine">
-        <span>Status</span>
-        <strong id="statusText">--</strong>
-      </div>
-
-    </div>
-
-    <div class="alert" id="alert">
-      ⚠️ SPEED LIMIT EXCEEDED
-    </div>
-
-    <div class="safeBox" id="safeBox">
-      ✓ Vehicle speed is within the detected limit
-    </div>
-
-  </div>
-
-  <div class="footer">
-    DriveGuard AI • YOLO11 Traffic Sign Intelligence
-  </div>
-
-</div>
 
 <script>
 
-/* =========================================================
-   IMPORTANT:
-   Replace this URL with your GitHub RAW ONNX URL.
-   Example:
-   https://raw.githubusercontent.com/USERNAME/REPO/main/traffic_sign_detector.onnx
-========================================================= */
-const MODEL_URL = "./traffic_sign_detector.onnx";
-/* =========================================================
-   MODEL CLASSES — EXACT ORDER FROM YOUR README
-========================================================= */
+/* ============================================================
+   CONFIGURATION
+   ============================================================ */
 
-const CLASS_NAMES = [
-  "all",
-  "Green Light",
-  "Red Light",
-  "Speed Limit 100",
-  "Speed Limit 110",
-  "Speed Limit 120",
-  "Speed Limit 20",
-  "Speed Limit 30",
-  "Speed Limit 40",
-  "Speed Limit 50",
-  "Speed Limit 60",
-  "Speed Limit 70",
-  "Speed Limit 80",
-  "Speed Limit 90",
-  "Stop"
-];
+const MODEL = "zai-org/GLM-4.5V";
+
+const API_URL =
+    "https://router.huggingface.co/v1/chat/completions";
 
 
-/* =========================================================
-   SPEED LIMIT CLASS MAPPING
-========================================================= */
+/* ============================================================
+   ELEMENTS
+   ============================================================ */
 
-const SPEED_LIMITS = {
-  3:100,
-  4:110,
-  5:120,
-  6:20,
-  7:30,
-  8:40,
-  9:50,
-  10:60,
-  11:70,
-  12:80,
-  13:90
-};
+const imageInput =
+    document.getElementById("imageInput");
 
+const preview =
+    document.getElementById("preview");
 
-/* =========================================================
-   DOM
-========================================================= */
+const uploadContent =
+    document.getElementById("uploadContent");
 
-const fileInput = document.getElementById("file");
-const preview = document.getElementById("preview");
-const detectBtn = document.getElementById("detectBtn");
-const cameraBtn = document.getElementById("cameraBtn");
+const detectBtn =
+    document.getElementById("detectBtn");
 
-const speedSlider = document.getElementById("speedSlider");
-const speedText = document.getElementById("speed");
-const kmhText = document.getElementById("kmh");
+const apiToken =
+    document.getElementById("apiToken");
 
-const result = document.getElementById("result");
-const loading = document.getElementById("loading");
-const status = document.getElementById("status");
+const speedSlider =
+    document.getElementById("speedSlider");
 
+const speedMs =
+    document.getElementById("speedMs");
 
-/* =========================================================
-   SPEED SLIDER
-========================================================= */
+const speedKmh =
+    document.getElementById("speedKmh");
 
-speedSlider.addEventListener("input", () => {
+const emptyResult =
+    document.getElementById("emptyResult");
 
-  const ms = Number(speedSlider.value);
-  const kmh = ms * 3.6;
+const loading =
+    document.getElementById("loading");
 
-  speedText.textContent = ms.toFixed(1);
-  kmhText.textContent = kmh.toFixed(1);
+const results =
+    document.getElementById("results");
 
-  updateComparison();
+const signList =
+    document.getElementById("signList");
 
-});
+const speedResult =
+    document.getElementById("speedResult");
+
+const rawJson =
+    document.getElementById("rawJson");
 
 
-/* =========================================================
-   FILE SELECT
-========================================================= */
-
-fileInput.addEventListener("change", async () => {
-
-  const file = fileInput.files[0];
-
-  if(!file) return;
-
-  const url = URL.createObjectURL(file);
-
-  preview.src = url;
-  preview.style.display = "block";
-
-  await new Promise(resolve => {
-    preview.onload = resolve;
-  });
-
-  detectBtn.disabled = false;
-
-});
+let imageDataURL = null;
 
 
-/* =========================================================
-   ONNX MODEL
-========================================================= */
+/* ============================================================
+   SPEED
+   ============================================================ */
 
-let session = null;
+function updateSpeed() {
 
-async function loadModel(){
+    const ms =
+        Number(speedSlider.value);
 
-  try{
+    const kmh =
+        ms * 3.6;
 
-    status.textContent = "● Loading AI Model";
+    speedMs.textContent =
+        ms.toFixed(1).replace(".0", "");
 
-    session = await ort.InferenceSession.create(
-      MODEL_URL,
-      {
-        executionProviders:["wasm"],
-        graphOptimizationLevel:"all"
-      }
-    );
-
-    status.textContent = "● AI Model Ready";
-    status.style.color = "#72e8a6";
-
-  }catch(error){
-
-    console.error(error);
-
-    status.textContent = "● Model Error";
-    status.style.color = "#ff7474";
-
-    alert(
-      "Model load nahi hua.\n\n" +
-      "MODEL_URL mein apne GitHub ONNX ka RAW URL check karo."
-    );
-
-  }
-
+    speedKmh.textContent =
+        Math.round(kmh);
 }
 
+speedSlider.addEventListener(
+    "input",
+    updateSpeed
+);
 
-/* =========================================================
-   IMAGE → YOLO INPUT
-   640 × 640 LETTERBOX
-========================================================= */
-
-function preprocess(image){
-
-  const canvas = document.createElement("canvas");
-
-  canvas.width = 640;
-  canvas.height = 640;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0,0,640,640);
-
-  const scale = Math.min(
-    640 / image.width,
-    640 / image.height
-  );
-
-  const nw = Math.round(image.width * scale);
-  const nh = Math.round(image.height * scale);
-
-  const dx = Math.floor((640 - nw) / 2);
-  const dy = Math.floor((640 - nh) / 2);
-
-  ctx.drawImage(
-    image,
-    0,
-    0,
-    image.width,
-    image.height,
-    dx,
-    dy,
-    nw,
-    nh
-  );
-
-  const data = ctx.getImageData(0,0,640,640).data;
-
-  const input = new Float32Array(1 * 3 * 640 * 640);
-
-  let rIndex = 0;
-  let gIndex = 640 * 640;
-  let bIndex = 2 * 640 * 640;
-
-  for(let i=0; i<data.length; i+=4){
-
-    input[rIndex++] = data[i] / 255;
-    input[gIndex++] = data[i+1] / 255;
-    input[bIndex++] = data[i+2] / 255;
-
-  }
-
-  return new ort.Tensor(
-    "float32",
-    input,
-    [1,3,640,640]
-  );
-
-}
+updateSpeed();
 
 
-/* =========================================================
-   YOLO11 OUTPUT
-   Model output = [1,19,8400]
+/* ============================================================
+   IMAGE UPLOAD
+   ============================================================ */
 
-   First 4 = x,y,w,h
-   Remaining 15 = class scores
-========================================================= */
+imageInput.addEventListener(
+    "change",
+    async function () {
 
-function parseOutput(output){
+        const file = this.files[0];
 
-  const data = output.data;
+        if (!file) {
+            return;
+        }
 
-  const numClasses = 15;
-  const numBoxes = 8400;
+        try {
 
-  let detections = [];
+            imageDataURL =
+                await compressImage(file);
 
-  for(let i=0;i<numBoxes;i++){
+            preview.src =
+                imageDataURL;
 
-    const cx = data[i];
-    const cy = data[numBoxes + i];
-    const w  = data[2*numBoxes + i];
-    const h  = data[3*numBoxes + i];
+            preview.style.display =
+                "block";
 
-    let bestClass = -1;
-    let bestScore = 0;
+            uploadContent.style.display =
+                "none";
 
-    for(let c=0;c<numClasses;c++){
+            detectBtn.disabled =
+                false;
 
-      const score =
-        data[(4+c)*numBoxes+i];
+            clearResults();
 
-      if(score > bestScore){
+        } catch (error) {
 
-        bestScore = score;
-        bestClass = c;
+            alert(
+                "Could not process the image."
+            );
 
-      }
+        }
 
     }
+);
 
-    if(bestScore < 0.25) continue;
 
-    detections.push({
-      classId:bestClass,
-      score:bestScore,
-      x1:cx-w/2,
-      y1:cy-h/2,
-      x2:cx+w/2,
-      y2:cy+h/2
+/* ============================================================
+   IMAGE COMPRESSION
+   ============================================================ */
+
+function compressImage(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const reader =
+            new FileReader();
+
+        reader.onload = function () {
+
+            const img =
+                new Image();
+
+            img.onload = function () {
+
+                const MAX_SIZE = 1280;
+
+                let width =
+                    img.width;
+
+                let height =
+                    img.height;
+
+
+                if (width > MAX_SIZE) {
+
+                    height =
+                        height * MAX_SIZE / width;
+
+                    width =
+                        MAX_SIZE;
+                }
+
+
+                if (height > MAX_SIZE) {
+
+                    width =
+                        width * MAX_SIZE / height;
+
+                    height =
+                        MAX_SIZE;
+                }
+
+
+                const canvas =
+                    document.createElement("canvas");
+
+                canvas.width =
+                    Math.round(width);
+
+                canvas.height =
+                    Math.round(height);
+
+
+                const ctx =
+                    canvas.getContext("2d");
+
+                ctx.drawImage(
+                    img,
+                    0,
+                    0,
+                    canvas.width,
+                    canvas.height
+                );
+
+
+                resolve(
+                    canvas.toDataURL(
+                        "image/jpeg",
+                        0.82
+                    )
+                );
+
+            };
+
+            img.onerror =
+                reject;
+
+            img.src =
+                reader.result;
+        };
+
+        reader.onerror =
+            reject;
+
+        reader.readAsDataURL(file);
+
     });
 
-  }
-
-  return nms(detections,0.45);
-
 }
 
 
-/* =========================================================
-   NMS
-========================================================= */
+/* ============================================================
+   MAIN DETECTION
+   ============================================================ */
 
-function iou(a,b){
+async function detectSigns() {
 
-  const x1=Math.max(a.x1,b.x1);
-  const y1=Math.max(a.y1,b.y1);
-  const x2=Math.min(a.x2,b.x2);
-  const y2=Math.min(a.y2,b.y2);
+    if (!imageDataURL) {
 
-  const inter =
-    Math.max(0,x2-x1) *
-    Math.max(0,y2-y1);
+        alert(
+            "Please upload an image first."
+        );
 
-  const areaA =
-    Math.max(0,a.x2-a.x1) *
-    Math.max(0,a.y2-a.y1);
-
-  const areaB =
-    Math.max(0,b.x2-b.x1) *
-    Math.max(0,b.y2-b.y1);
-
-  return inter/(areaA+areaB-inter+1e-6);
-
-}
-
-function nms(boxes,threshold){
-
-  boxes.sort((a,b)=>b.score-a.score);
-
-  const keep=[];
-
-  while(boxes.length){
-
-    const best=boxes.shift();
-
-    keep.push(best);
-
-    boxes=boxes.filter(
-      box =>
-        box.classId!==best.classId ||
-        iou(best,box)<threshold
-    );
-
-  }
-
-  return keep;
-
-}
-
-
-/* =========================================================
-   DETECT
-========================================================= */
-
-detectBtn.addEventListener("click", async () => {
-
-  if(!session){
-
-    alert("AI model abhi ready nahi hai.");
-    return;
-
-  }
-
-  if(!preview.src) return;
-
-  loading.style.display="block";
-  detectBtn.disabled=true;
-
-  try{
-
-    const input = preprocess(preview);
-
-    const feeds = {};
-
-    feeds[session.inputNames[0]] = input;
-
-    const outputMap =
-      await session.run(feeds);
-
-    const output =
-      outputMap[session.outputNames[0]];
-
-    const detections =
-      parseOutput(output);
-
-    /*
-      Only speed-limit signs are relevant
-      for speed comparison.
-    */
-
-    const speedSigns =
-      detections.filter(
-        d => SPEED_LIMITS[d.classId]
-      );
-
-    if(speedSigns.length===0){
-
-      showNoSpeedSign();
-
-    }else{
-
-      speedSigns.sort(
-        (a,b)=>b.score-a.score
-      );
-
-      showDetection(speedSigns[0]);
-
+        return;
     }
 
-  }catch(error){
 
-    console.error(error);
-
-    alert(
-      "Detection error.\n\n" +
-      error.message
-    );
-
-  }
-
-  loading.style.display="none";
-  detectBtn.disabled=false;
-
-});
+    const token =
+        apiToken.value.trim();
 
 
-/* =========================================================
-   SHOW RESULT
-========================================================= */
+    if (!token) {
 
-function showDetection(d){
+        alert(
+            "Please enter your Hugging Face API token."
+        );
 
-  const limitKmh =
-    SPEED_LIMITS[d.classId];
+        apiToken.focus();
 
-  const limitMs =
-    limitKmh / 3.6;
+        return;
+    }
 
-  const carMs =
-    Number(speedSlider.value);
 
-  result.style.display="block";
+    setLoading(true);
 
-  document.getElementById("signNumber")
-    .textContent=limitKmh;
 
-  document.getElementById("signName")
-    .textContent=`Speed Limit ${limitKmh}`;
+    const prompt = `You are an expert traffic-sign recognition AI.
 
-  document.getElementById("confidence")
-    .textContent=
-    (d.score*100).toFixed(1)+"%";
+Analyze the provided road image carefully.
 
-  document.getElementById("vehicleSpeed")
-    .textContent=
-    carMs.toFixed(1)+" m/s";
+TASK:
+Identify EVERY clearly visible traffic sign in the image.
 
-  document.getElementById("limitSpeed")
-    .textContent=
-    `${limitMs.toFixed(1)} m/s (${limitKmh} km/h)`;
+This may include:
+- speed limit signs
+- stop signs
+- traffic lights
+- mandatory direction signs
+- warning signs
+- no-entry signs
+- pedestrian signs
+- bus stop signs
+- parking signs
+- turn signs
+- other road/traffic signs
 
-  updateComparison();
+IMPORTANT:
+1. Do not invent signs.
+2. Only report signs that are actually visible.
+3. If multiple signs are visible, report ALL of them.
+4. Read speed-limit numbers carefully.
+5. For speed-limit signs, extract the numerical speed.
+6. Give an approximate image position.
+7. Confidence must be between 0 and 1.
+8. Return ONLY valid JSON.
+9. Do not use Markdown.
+10. Do not add explanations outside JSON.
 
+Return exactly this structure:
+
+{
+  "signs": [
+    {
+      "type": "speed_limit",
+      "text": "SPEED 20 KM/H",
+      "speed_kmh": 20,
+      "position": "left",
+      "confidence": 0.98
+    }
+  ]
 }
 
-
-/* =========================================================
-   NO SPEED SIGN
-========================================================= */
-
-function showNoSpeedSign(){
-
-  result.style.display="block";
-
-  document.getElementById("signNumber")
-    .textContent="?";
-
-  document.getElementById("signName")
-    .textContent="No Speed Limit Sign";
-
-  document.getElementById("confidence")
-    .textContent="Not detected";
-
-  document.getElementById("vehicleSpeed")
-    .textContent=
-    Number(speedSlider.value).toFixed(1)+" m/s";
-
-  document.getElementById("limitSpeed")
-    .textContent="--";
-
-  document.getElementById("statusText")
-    .textContent="No speed limit";
-
-  document.getElementById("statusText")
-    .className="";
-
-  document.getElementById("alert")
-    .style.display="none";
-
-  document.getElementById("safeBox")
-    .style.display="none";
-
-}
+Rules:
+- For non-speed signs, speed_kmh must be null.
+- If no traffic sign is clearly visible, return:
+  {"signs":[]}
+- position must be one of:
+  "left", "center", "right", "top-left", "top-right", "bottom-left", "bottom-right"
+- type should be short and descriptive.
+- confidence must be a decimal from 0 to 1.`;
 
 
-/* =========================================================
-   SPEED COMPARISON
-========================================================= */
+    try {
 
-function updateComparison(){
+        const response =
+            await fetch(API_URL, {
 
-  const name =
-    document.getElementById("signName")
-      .textContent;
+                method: "POST",
 
-  const match =
-    name.match(/Speed Limit (\d+)/);
+                headers: {
 
-  if(!match) return;
+                    "Authorization":
+                        "Bearer " + token,
 
-  const limitKmh =
-    Number(match[1]);
+                    "Content-Type":
+                        "application/json"
 
-  const limitMs =
-    limitKmh / 3.6;
+                },
 
-  const carMs =
-    Number(speedSlider.value);
+                body: JSON.stringify({
 
-  const statusText =
-    document.getElementById("statusText");
+                    model: MODEL,
 
-  const alertBox =
-    document.getElementById("alert");
+                    messages: [
 
-  const safeBox =
-    document.getElementById("safeBox");
+                        {
+                            role: "user",
 
-  document.getElementById("vehicleSpeed")
-    .textContent=
-    carMs.toFixed(1)+" m/s";
-
-  document.getElementById("limitSpeed")
-    .textContent=
-    `${limitMs.toFixed(1)} m/s (${limitKmh} km/h)`;
-
-  if(carMs > limitMs){
-
-    statusText.textContent="OVER SPEED";
-    statusText.className="warning";
-
-    alertBox.style.display="block";
-    safeBox.style.display="none";
-
-  }else{
-
-    statusText.textContent="SAFE";
-    statusText.className="safe";
-
-    alertBox.style.display="none";
-    safeBox.style.display="block";
-
-  }
-
-}
-
-
-/* =========================================================
-   CAMERA
-========================================================= */
-
-cameraBtn.addEventListener("click", async () => {
-
-  try{
-
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-        video:{facingMode:"environment"}
-      });
-
-    const video =
-      document.createElement("video");
-
-    video.srcObject=stream;
-    video.autoplay=true;
-    video.playsInline=true;
-
-    document.body.innerHTML="";
-
-    document.body.appendChild(video);
-
-    video.style.width="100%";
-    video.style.height="100vh";
-    video.style.objectFit="cover";
-
-    /*
-      Camera mode can be expanded to continuous
-      real-time detection after basic image detection
-      is confirmed.
-    */
-
-  }catch(error){
-
-    alert(
-      "Camera permission nahi mili."
-    );
-
-  }
-
-});
-
-
-/* =========================================================
-   START MODEL
-========================================================= */
-
-loadModel();
-
-</script>
-
-</body>
-</html>
+   
