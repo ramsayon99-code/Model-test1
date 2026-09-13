@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traffic Sign AI Test</title>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .box {
+        max-width: 700px;
+        margin: auto;
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.1);
+    }
+
+    #imageInput {
+        margin-top: 20px;
+        padding: 10px;
+    }
+
+    #imageInput:disabled {
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    #status {
+        margin: 15px 0;
+        font-weight: bold;
+    }
+
+    #preview {
+        max-width: 100%;
+        max-height: 400px;
+        margin-top: 20px;
+        border-radius: 10px;
+        display: none;
+    }
+
+    #message {
+        margin-top: 20px;
+        padding: 15px;
+        background: #eee;
+        border-radius: 10px;
+        white-space: pre-line;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+    <h1>🚦 Traffic Sign AI Test</h1>
+
+    <div id="status">
+        ⏳ Loading AI model...
+    </div>
+
+    <!-- Initially disabled -->
+    <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+        disabled
+    >
+
+    <img id="preview">
+
+    <div id="message">
+        Please wait for the AI model to load.
+    </div>
+
+</div>
+
+
+<script>
+
+const MODEL_PATH = "./general_traffic_sign_best.onnx";
+
+const imageInput = document.getElementById("imageInput");
+const preview = document.getElementById("preview");
+const status = document.getElementById("status");
+const message = document.getElementById("message");
+
+let session = null;
+
+
+// 21 classes
+const CLASS_NAMES = [
+    "stop",
+    "parking",
+    "warning",
+    "bus_stop",
+    "do_not_enter",
+    "do_not_stop",
+    "do_not_turn_l",
+    "do_not_turn_r",
+    "do_not_u_turn",
+    "enter_left_lane",
+    "green_light",
+    "left_right_lane",
+    "no_parking",
+    "ped_crossing",
+    "ped_zebra_cross",
+    "railway_crossing",
+    "red_light",
+    "t_intersection_l",
+    "traffic_light",
+    "u_turn",
+    "yellow_light"
+];
+
+
+// ================================
+// LOAD MODEL
+// ================================
+
+async function loadModel() {
+
+    try {
+
+        status.innerText = "⏳ Loading traffic-sign AI model...";
+        message.innerText = "AI model load ho raha hai...";
+
+        session = await ort.InferenceSession.create(
+            MODEL_PATH,
+            {
+                executionProviders: ["wasm"]
+            }
+        );
+
+        console.log("✅ Model loaded");
+        console.log("Inputs:", session.inputNames);
+        console.log("Outputs:", session.outputNames);
+
+        status.innerText = "🟢 AI Model Ready";
+
+        message.innerText =
+            "✅ Model successfully loaded!\n\nAb image upload kar sakte ho.";
+
+        // ONLY enable after successful model loading
+        imageInput.disabled = false;
+
+    } catch (error) {
+
+        console.error("MODEL ERROR:", error);
+
+        session = null;
+
+        status.innerText = "🔴 AI Model Load Failed";
+
+        message.innerText =
+            "❌ AI model load nahi hua.\n\n" +
+            "Image upload disabled hai.\n\n" +
+            "Check karo:\n" +
+            "• general_traffic_sign_best.onnx same folder mein hai\n" +
+            "• Website HTTP/HTTPS se open ho rahi hai\n" +
+            "• Browser model ko access kar pa raha hai";
+
+        // Keep upload disabled
+        imageInput.disabled = true;
+    }
+}
+
+
+// ================================
+// IMAGE UPLOAD
+// ================================
+
+imageInput.addEventListener("change", async function(event) {
+
+    // Extra safety
+    if (!session) {
+
+        imageInput.value = "";
+
+        message.innerText =
+            "❌ AI model ready nahi hai.\nImage upload disabled.";
+
+        return;
+    }
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    const imageURL = URL.createObjectURL(file);
+
+    preview.src = imageURL;
+    preview.style.display = "block";
+
+    message.innerText = "🔍 Traffic sign detect ho raha hai...";
+    status.innerText = "🔍 Processing...";
+
+    preview.onload = async function() {
+
+        try {
+
+            const tensor = await imageToTensor(preview);
+
+            const inputName = session.inputNames[0];
+
+            const feeds = {};
+            feeds[inputName] = tensor;
+
+            const results = await session.run(feeds);
+
+            const output =
+                results[session.outputNames[0]];
+
+            console.log("Model output:", output);
+            console.log("Dimensions:", output.dims);
+
+            processDetections(output);
+
+        } catch (error) {
+
+            console.error("Detection error:", error);
+
+            message.innerText =
+                "❌ Detection mein problem aayi.";
+
+            status.innerText =
+                "🔴 Detection failed";
+
+        }
+    };
+});
+
+
+// ================================
+// IMAGE → TENSOR
+// ================================
+
+async function imageToTensor(img) {
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = 640;
+    canvas.height = 640;
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.drawImage(
+        img,
+        0,
+        0,
+        640,
+        640
+    );
+
+    const imageData =
+        ctx.getImageData(
+            0,
+            0,
+            640,
+            640
+        );
+
+    const size = 640 * 640;
+
+    const data =
+        new Float32Array(size * 3);
+
+    for (let i = 0; i < size; i++) {
+
+        data[i] =
+            imageData.data[i * 4] / 255;
+
+        data[size + i] =
+            imageData.data[i * 4 + 1] / 255;
+
+        data[size * 2 + i] =
+            imageData.data[i * 4 + 2] / 255;
+    }
+
+    return new ort.Tensor(
+        "float32",
+        data,
+        [1, 3, 640, 640]
+    );
+}
+
+
+// ================================
+// DETECTION
+// ================================
+
+function processDetections(output) {
+
+    const data = output.data;
+    const dims = output.dims;
+
+    const numChannels = dims[1];
+    const numBoxes = dims[2];
+
+    const numClasses = numChannels - 4;
+
+    let best = null;
+
+    for (let i = 0; i < numBoxes; i++) {
+
+        let classId = -1;
+        let score = 0;
+
+        for (let c = 0; c < numClasses; c++) {
+
+            const current =
+                data[(4 + c) * numBoxes + i];
+
+            if (current > score) {
+
+                score = current;
+                classId = c;
+            }
+        }
+
+        if (
+            score > 0.35 &&
+            (!best || score > best.score)
+        ) {
+
+            best = {
+                classId: classId,
+                score: score
+            };
+        }
+    }
+
+
+    if (!best) {
+
+        message.innerText =
+            "❌ Koi traffic sign detect nahi hua.";
+
+        status.innerText =
+            "No sign detected";
+
+        return;
+    }
+
+
+    const name =
+        CLASS_NAMES[best.classId] ||
+        "Unknown Sign";
+
+    const confidence =
+        (best.score * 100).toFixed(1);
+
+
+    message.innerText =
+        "🚦 Traffic Sign Detected!\n\n" +
+        "Sign: " + formatName(name) +
+        "\nConfidence: " + confidence + "%";
+
+    status.innerText =
+        "🟢 Detection Complete";
+}
+
+
+// ================================
+// FORMAT NAME
+// ================================
+
+function formatName(name) {
+
+    return name
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+
+}
+
+
+// START
+loadModel();
+
+</script>
+
+</body>
+</html>
