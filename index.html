@@ -1,388 +1,370 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Traffic Sign AI Test</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speed Limit AI Test</title>
 
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
-<style>
+  <style>
     body {
-        font-family: Arial, sans-serif;
-        background: #f4f4f4;
-        text-align: center;
-        padding: 20px;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #111;
+      color: white;
+      margin: 0;
+      padding: 20px;
     }
 
-    .box {
-        max-width: 700px;
-        margin: auto;
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,.1);
-    }
-
-    #imageInput {
-        margin-top: 20px;
-        padding: 10px;
-    }
-
-    #imageInput:disabled {
-        opacity: .5;
-        cursor: not-allowed;
-    }
-
-    #status {
-        margin: 15px 0;
-        font-weight: bold;
+    h1 {
+      margin-bottom: 10px;
     }
 
     #preview {
-        max-width: 100%;
-        max-height: 400px;
-        margin-top: 20px;
-        border-radius: 10px;
-        display: none;
+      width: min(95vw, 640px);
+      max-height: 70vh;
+      object-fit: contain;
+      border: 2px solid #555;
+      border-radius: 12px;
+      margin-top: 15px;
     }
 
-    #message {
-        margin-top: 20px;
-        padding: 15px;
-        background: #eee;
-        border-radius: 10px;
-        white-space: pre-line;
+    button {
+      margin: 10px 5px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
     }
-</style>
+
+    #result {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #status {
+      margin: 10px;
+      color: #aaa;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="box">
+  <h1>🚗 Speed Limit AI Test</h1>
 
-    <h1>🚦 Traffic Sign AI Test</h1>
+  <div id="status">Loading model...</div>
 
-    <div id="status">
-        ⏳ Loading AI model...
-    </div>
+  <input type="file" id="imageInput" accept="image/*">
 
-    <!-- Initially disabled -->
-    <input
-        type="file"
-        id="imageInput"
-        accept="image/*"
-        disabled
-    >
+  <br>
 
-    <img id="preview">
+  <img id="preview" hidden>
 
-    <div id="message">
-        Please wait for the AI model to load.
-    </div>
-
-</div>
-
+  <div id="result">Upload an image</div>
 
 <script>
 
-const MODEL_PATH = "./general_traffic_sign_best.onnx";
-
-const imageInput = document.getElementById("imageInput");
-const preview = document.getElementById("preview");
-const status = document.getElementById("status");
-const message = document.getElementById("message");
-
 let session = null;
 
+const MODEL_PATH = "./speed_limit_best.onnx";
 
-// 21 classes
 const CLASS_NAMES = [
-    "stop",
-    "parking",
-    "warning",
-    "bus_stop",
-    "do_not_enter",
-    "do_not_stop",
-    "do_not_turn_l",
-    "do_not_turn_r",
-    "do_not_u_turn",
-    "enter_left_lane",
-    "green_light",
-    "left_right_lane",
-    "no_parking",
-    "ped_crossing",
-    "ped_zebra_cross",
-    "railway_crossing",
-    "red_light",
-    "t_intersection_l",
-    "traffic_light",
-    "u_turn",
-    "yellow_light"
+  "STOP",
+  "SPEED LIMIT 100",
+  "SPEED LIMIT 120",
+  "SPEED LIMIT 20",
+  "SPEED LIMIT 30",
+  "SPEED LIMIT 50",
+  "SPEED LIMIT 70",
+  "SPEED-LIMIT-60",
+  "SPEED-LIMIT-80"
 ];
 
-
-// ================================
-// LOAD MODEL
-// ================================
+const INPUT_SIZE = 640;
 
 async function loadModel() {
 
-    try {
+  try {
 
-        status.innerText = "⏳ Loading traffic-sign AI model...";
-        message.innerText = "AI model load ho raha hai...";
+    session = await ort.InferenceSession.create(
+      MODEL_PATH,
+      {
+        executionProviders: ["wasm"]
+      }
+    );
 
-        session = await ort.InferenceSession.create(
-            MODEL_PATH,
-            {
-                executionProviders: ["wasm"]
-            }
-        );
+    console.log("Model loaded");
 
-        console.log("✅ Model loaded");
-        console.log("Inputs:", session.inputNames);
-        console.log("Outputs:", session.outputNames);
+    console.log("Input:", session.inputNames);
+    console.log("Output:", session.outputNames);
 
-        status.innerText = "🟢 AI Model Ready";
+    document.getElementById("status").innerText =
+      "✅ Speed-limit model loaded";
 
-        message.innerText =
-            "✅ Model successfully loaded!\n\nAb image upload kar sakte ho.";
+  } catch (error) {
 
-        // ONLY enable after successful model loading
-        imageInput.disabled = false;
+    console.error(error);
 
-    } catch (error) {
+    document.getElementById("status").innerText =
+      "❌ Model loading failed";
 
-        console.error("MODEL ERROR:", error);
+  }
 
-        session = null;
-
-        status.innerText = "🔴 AI Model Load Failed";
-
-        message.innerText =
-            "❌ AI model load nahi hua.\n\n" +
-            "Image upload disabled hai.\n\n" +
-            "Check karo:\n" +
-            "• general_traffic_sign_best.onnx same folder mein hai\n" +
-            "• Website HTTP/HTTPS se open ho rahi hai\n" +
-            "• Browser model ko access kar pa raha hai";
-
-        // Keep upload disabled
-        imageInput.disabled = true;
-    }
 }
 
+function imageToTensor(img) {
 
-// ================================
-// IMAGE UPLOAD
-// ================================
+  const canvas = document.createElement("canvas");
 
-imageInput.addEventListener("change", async function(event) {
+  canvas.width = INPUT_SIZE;
+  canvas.height = INPUT_SIZE;
 
-    // Extra safety
-    if (!session) {
+  const ctx = canvas.getContext("2d");
 
-        imageInput.value = "";
+  ctx.drawImage(
+    img,
+    0,
+    0,
+    INPUT_SIZE,
+    INPUT_SIZE
+  );
 
-        message.innerText =
-            "❌ AI model ready nahi hai.\nImage upload disabled.";
+  const imageData = ctx.getImageData(
+    0,
+    0,
+    INPUT_SIZE,
+    INPUT_SIZE
+  );
 
-        return;
+  const data = new Float32Array(
+    3 * INPUT_SIZE * INPUT_SIZE
+  );
+
+  const area = INPUT_SIZE * INPUT_SIZE;
+
+  for (let i = 0; i < area; i++) {
+
+    const r = imageData.data[i * 4] / 255;
+    const g = imageData.data[i * 4 + 1] / 255;
+    const b = imageData.data[i * 4 + 2] / 255;
+
+    data[i] = r;
+    data[area + i] = g;
+    data[area * 2 + i] = b;
+
+  }
+
+  return new ort.Tensor(
+    "float32",
+    data,
+    [1, 3, INPUT_SIZE, INPUT_SIZE]
+  );
+
+}
+
+async function detect(img) {
+
+  if (!session) {
+
+    document.getElementById("result").innerText =
+      "❌ Model not loaded";
+
+    return;
+
+  }
+
+  document.getElementById("result").innerText =
+    "🔎 Detecting...";
+
+  try {
+
+    const tensor = imageToTensor(img);
+
+    const inputName = session.inputNames[0];
+
+    const output = await session.run({
+      [inputName]: tensor
+    });
+
+    const outputName = session.outputNames[0];
+
+    const result = output[outputName];
+
+    console.log("Output shape:", result.dims);
+
+    const detections = decodeOutput(result);
+
+    showResults(detections);
+
+  } catch (error) {
+
+    console.error(error);
+
+    document.getElementById("result").innerText =
+      "❌ Detection error";
+
+  }
+
+}
+
+function decodeOutput(output) {
+
+  const data = output.data;
+  const dims = output.dims;
+
+  console.log("Raw output:", dims);
+
+  /*
+    YOLOv11 normally gives:
+
+    [1, 4 + classes, 8400]
+
+    For 9 classes:
+
+    [1, 13, 8400]
+  */
+
+  let channels;
+  let boxes;
+
+  if (dims.length !== 3) {
+    console.error("Unexpected output shape");
+    return [];
+  }
+
+  if (dims[1] < dims[2]) {
+
+    channels = dims[1];
+    boxes = dims[2];
+
+  } else {
+
+    boxes = dims[1];
+    channels = dims[2];
+
+  }
+
+  const classCount = channels - 4;
+
+  console.log(
+    "Channels:",
+    channels,
+    "Boxes:",
+    boxes,
+    "Classes:",
+    classCount
+  );
+
+  const detections = [];
+
+  for (let i = 0; i < boxes; i++) {
+
+    let bestClass = -1;
+    let bestScore = 0;
+
+    for (let c = 0; c < classCount; c++) {
+
+      let index;
+
+      if (dims[1] === channels) {
+
+        index = (4 + c) * boxes + i;
+
+      } else {
+
+        index = i * channels + 4 + c;
+
+      }
+
+      const score = data[index];
+
+      if (score > bestScore) {
+
+        bestScore = score;
+        bestClass = c;
+
+      }
+
     }
+
+    if (bestScore >= 0.35) {
+
+      detections.push({
+        classId: bestClass,
+        confidence: bestScore
+      });
+
+    }
+
+  }
+
+  return detections;
+
+}
+
+function showResults(detections) {
+
+  const result = document.getElementById("result");
+
+  if (detections.length === 0) {
+
+    result.innerHTML =
+      "❌ No speed-limit sign detected";
+
+    return;
+
+  }
+
+  detections.sort(
+    (a, b) => b.confidence - a.confidence
+  );
+
+  let html = "🚦 <b>Detected:</b><br><br>";
+
+  detections.slice(0, 10).forEach((det, index) => {
+
+    const name =
+      CLASS_NAMES[det.classId] ||
+      "Unknown class " + det.classId;
+
+    const confidence =
+      (det.confidence * 100).toFixed(2);
+
+    html +=
+      `${index + 1}. ${name} → ${confidence}%<br>`;
+
+  });
+
+  result.innerHTML = html;
+
+}
+
+document
+  .getElementById("imageInput")
+  .addEventListener("change", function(event) {
 
     const file = event.target.files[0];
 
     if (!file) return;
 
-    const imageURL = URL.createObjectURL(file);
+    const img = document.getElementById("preview");
 
-    preview.src = imageURL;
-    preview.style.display = "block";
+    img.src = URL.createObjectURL(file);
 
-    message.innerText = "🔍 Traffic sign detect ho raha hai...";
-    status.innerText = "🔍 Processing...";
+    img.hidden = false;
 
-    preview.onload = async function() {
+    img.onload = () => {
 
-        try {
+      detect(img);
 
-            const tensor = await imageToTensor(preview);
-
-            const inputName = session.inputNames[0];
-
-            const feeds = {};
-            feeds[inputName] = tensor;
-
-            const results = await session.run(feeds);
-
-            const output =
-                results[session.outputNames[0]];
-
-            console.log("Model output:", output);
-            console.log("Dimensions:", output.dims);
-
-            processDetections(output);
-
-        } catch (error) {
-
-            console.error("Detection error:", error);
-
-            message.innerText =
-                "❌ Detection mein problem aayi.";
-
-            status.innerText =
-                "🔴 Detection failed";
-
-        }
     };
-});
 
+  });
 
-// ================================
-// IMAGE → TENSOR
-// ================================
-
-async function imageToTensor(img) {
-
-    const canvas = document.createElement("canvas");
-
-    canvas.width = 640;
-    canvas.height = 640;
-
-    const ctx = canvas.getContext("2d");
-
-    ctx.drawImage(
-        img,
-        0,
-        0,
-        640,
-        640
-    );
-
-    const imageData =
-        ctx.getImageData(
-            0,
-            0,
-            640,
-            640
-        );
-
-    const size = 640 * 640;
-
-    const data =
-        new Float32Array(size * 3);
-
-    for (let i = 0; i < size; i++) {
-
-        data[i] =
-            imageData.data[i * 4] / 255;
-
-        data[size + i] =
-            imageData.data[i * 4 + 1] / 255;
-
-        data[size * 2 + i] =
-            imageData.data[i * 4 + 2] / 255;
-    }
-
-    return new ort.Tensor(
-        "float32",
-        data,
-        [1, 3, 640, 640]
-    );
-}
-
-
-// ================================
-// DETECTION
-// ================================
-
-function processDetections(output) {
-
-    const data = output.data;
-    const dims = output.dims;
-
-    const numChannels = dims[1];
-    const numBoxes = dims[2];
-
-    const numClasses = numChannels - 4;
-
-    let best = null;
-
-    for (let i = 0; i < numBoxes; i++) {
-
-        let classId = -1;
-        let score = 0;
-
-        for (let c = 0; c < numClasses; c++) {
-
-            const current =
-                data[(4 + c) * numBoxes + i];
-
-            if (current > score) {
-
-                score = current;
-                classId = c;
-            }
-        }
-
-        if (
-            score > 0.35 &&
-            (!best || score > best.score)
-        ) {
-
-            best = {
-                classId: classId,
-                score: score
-            };
-        }
-    }
-
-
-    if (!best) {
-
-        message.innerText =
-            "❌ Koi traffic sign detect nahi hua.";
-
-        status.innerText =
-            "No sign detected";
-
-        return;
-    }
-
-
-    const name =
-        CLASS_NAMES[best.classId] ||
-        "Unknown Sign";
-
-    const confidence =
-        (best.score * 100).toFixed(1);
-
-
-    message.innerText =
-        "🚦 Traffic Sign Detected!\n\n" +
-        "Sign: " + formatName(name) +
-        "\nConfidence: " + confidence + "%";
-
-    status.innerText =
-        "🟢 Detection Complete";
-}
-
-
-// ================================
-// FORMAT NAME
-// ================================
-
-function formatName(name) {
-
-    return name
-        .replaceAll("_", " ")
-        .replace(/\b\w/g, c => c.toUpperCase());
-
-}
-
-
-// START
 loadModel();
 
 </script>
